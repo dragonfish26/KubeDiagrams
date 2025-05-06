@@ -4,6 +4,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fission-buildermgr
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 ---
 # Source: fission-all/templates/executor/serviceaccount.yaml
@@ -11,6 +14,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fission-executor
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 ---
 # Source: fission-all/templates/fluentbit/serviceaccount.yaml
@@ -25,6 +31,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fission-kubewatcher
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 ---
 # Source: fission-all/templates/misc-functions/serviceaccount.yaml
@@ -53,6 +62,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fission-keda
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 ---
 # Source: fission-all/templates/router/serviceaccount.yaml
@@ -60,6 +72,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fission-router
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 ---
 # Source: fission-all/templates/storagesvc/serviceaccount.yaml
@@ -67,6 +82,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fission-storagesvc
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 ---
 # Source: fission-all/templates/timer/serviceaccount.yaml
@@ -74,6 +92,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fission-timer
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 ---
 # Source: fission-all/templates/webhook-server/serviceaccount.yaml
@@ -101,6 +122,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: feature-config
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 data:
   "config.yaml": Y2FuYXJ5OgogIGVuYWJsZWQ6IGZhbHNlCiAgcHJvbWV0aGV1c1N2YzogIiIKYXV0aDoKICBlbmFibGVkOiBmYWxzZQ==
@@ -126,6 +150,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-buildermgr-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -148,6 +175,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-buildermgr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -193,6 +223,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-executor-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -215,6 +248,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-executor"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -332,6 +368,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-kubewatcher-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -355,6 +394,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-kubewatcher"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -535,6 +577,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-keda-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -558,6 +603,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-keda"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -659,6 +707,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-router-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -682,6 +733,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-router"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -710,6 +764,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-storagesvc-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -725,6 +782,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-timer-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules:
 - apiGroups:
@@ -748,6 +808,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "fission-all-timer"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 rules: []
 ---
@@ -756,6 +819,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-buildermgr-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -771,6 +837,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-buildermgr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -786,6 +855,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-executor-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -801,6 +873,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-executor"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -831,6 +906,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-kubewatcher-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -846,6 +924,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-kubewatcher"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -936,6 +1017,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-keda-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -951,6 +1035,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-keda"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -966,6 +1053,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-router-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -981,6 +1071,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-router"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -996,6 +1089,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-storagesvc-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -1011,6 +1107,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-timer-fission-cr"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -1026,6 +1125,9 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "fission-all-timer"
+  #CHANGE : add labels
+  labels:
+    chart: "fission-all-v1.21.0"
   namespace: default
 subjects:
   - kind: ServiceAccount
@@ -1963,6 +2065,14 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fission-preupgrade
+  # CHANGE : add labels
+  labels:
+    # The "release" convention makes it easy to tie a release to all of the
+    # Kubernetes resources that were created as part of that release.
+    release: fission-all
+    # This makes it easy to audit chart usage.
+    chart: fission-all-v1.21.0
+    app: fission-all
   namespace: default
   annotations:
     helm.sh/hook: pre-upgrade
@@ -1974,6 +2084,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: fission-all-preupgrade
+  # CHANGE : add labels
+  labels:
+    # The "release" convention makes it easy to tie a release to all of the
+    # Kubernetes resources that were created as part of that release.
+    release: fission-all
+    # This makes it easy to audit chart usage.
+    chart: fission-all-v1.21.0
+    app: fission-all
   annotations:
     helm.sh/hook: pre-upgrade
     helm.sh/hook-delete-policy: before-hook-creation
@@ -1993,6 +2111,14 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: fission-all-preupgrade
+  # CHANGE : add labels
+  labels:
+    # The "release" convention makes it easy to tie a release to all of the
+    # Kubernetes resources that were created as part of that release.
+    release: fission-all
+    # This makes it easy to audit chart usage.
+    chart: fission-all-v1.21.0
+    app: fission-all
   annotations:
     helm.sh/hook: pre-upgrade
     helm.sh/hook-delete-policy: before-hook-creation
@@ -2014,6 +2140,14 @@ metadata:
     helm.sh/hook-delete-policy: before-hook-creation
     helm.sh/hook-weight: "-2"
   name: "fission-all-preupgrade-fission-cr"
+  # CHANGE : add labels
+  labels:
+    # The "release" convention makes it easy to tie a release to all of the
+    # Kubernetes resources that were created as part of that release.
+    release: fission-all
+    # This makes it easy to audit chart usage.
+    chart: fission-all-v1.21.0
+    app: fission-all
   namespace: default
 rules:
 - apiGroups:
@@ -2038,6 +2172,14 @@ metadata:
     helm.sh/hook: pre-upgrade
     helm.sh/hook-delete-policy: before-hook-creation
   name: "fission-all-preupgrade-fission-cr"
+  # CHANGE : add labels
+  labels:
+    # The "release" convention makes it easy to tie a release to all of the
+    # Kubernetes resources that were created as part of that release.
+    release: fission-all
+    # This makes it easy to audit chart usage.
+    chart: fission-all-v1.21.0
+    app: fission-all
   namespace: default
 subjects:
   - kind: ServiceAccount

@@ -395,7 +395,9 @@ metadata:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
     app.kubernetes.io/instance: cert-manager
-    app.kubernetes.io/component: "cert-manager"
+    #CHANGE : component
+    app.kubernetes.io/component: "controller"
+    #app.kubernetes.io/component: "cert-manager"
     app.kubernetes.io/version: "v1.17.1"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.17.1
@@ -419,7 +421,9 @@ metadata:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
     app.kubernetes.io/instance: cert-manager
-    app.kubernetes.io/component: "cert-manager"
+    #CHANGE : component
+    app.kubernetes.io/component: "controller"
+    #app.kubernetes.io/component: "cert-manager"
     app.kubernetes.io/version: "v1.17.1"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.17.1
@@ -619,7 +623,9 @@ metadata:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
     app.kubernetes.io/instance: cert-manager
-    app.kubernetes.io/component: "cert-manager"
+    #CHANGE : component
+    app.kubernetes.io/component: "controller"
+    #app.kubernetes.io/component: "cert-manager"
     app.kubernetes.io/version: "v1.17.1"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.17.1
@@ -641,7 +647,9 @@ metadata:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
     app.kubernetes.io/instance: cert-manager
-    app.kubernetes.io/component: "cert-manager"
+    #CHANGE : component
+    app.kubernetes.io/component: "controller"
+    #app.kubernetes.io/component: "cert-manager"
     app.kubernetes.io/version: "v1.17.1"
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: cert-manager-v1.17.1

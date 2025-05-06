@@ -1,7 +1,7 @@
 ---
 # Source: jenkins/templates/service-account.yaml
 apiVersion: v1
-kind: ServiceAccount
+kind: ServiceAccount                                      #Jenkins ServiceAccount (type of non-human account that provides a distinct identity in a Kubernetes cluster)
 automountServiceAccountToken: true
 metadata:
   name: jenkins
@@ -15,7 +15,7 @@ metadata:
 ---
 # Source: jenkins/templates/secret.yaml
 apiVersion: v1
-kind: Secret
+kind: Secret                                                #Jenkins Secret (an object that contains a small amount of sensitive data)
 metadata:
   name: jenkins
   namespace: default
@@ -32,16 +32,18 @@ data:
 ---
 # Source: jenkins/templates/config.yaml
 apiVersion: v1
-kind: ConfigMap
+kind: ConfigMap                                             # Jenkins configmap (object used to store non-confidential data in key-value pairs)
 metadata:
   name: jenkins
   namespace: default
   labels:
     "app.kubernetes.io/name": 'jenkins'
+    # CHANGE : + label helm
+    "helm.sh/chart": "jenkins-5.8.17"
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-data:
+data:                                                             #the configuration data. 
   apply_config.sh: |-
     set -e
     echo "disable Setup Wizard"
@@ -70,7 +72,7 @@ data:
 ---
 # Source: jenkins/templates/jcasc-config.yaml
 apiVersion: v1
-kind: ConfigMap
+kind: ConfigMap                                                     #jenkins-jenkins-jcasc-config config-map
 metadata:
   name: "jenkins-jenkins-jcasc-config"
   namespace: default
@@ -81,7 +83,7 @@ metadata:
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
     jenkins-jenkins-config: "true"
-data:
+data:                                                                #the configuration data
   jcasc-default-config.yaml: |-
     jenkins:
       authorizationStrategy:
@@ -167,7 +169,7 @@ data:
         url: http://jenkins:8080
 ---
 # Source: jenkins/templates/home-pvc.yaml
-kind: PersistentVolumeClaim
+kind: PersistentVolumeClaim                                    #Jenkins persistent volume claim
 apiVersion: v1
 metadata:
   name: jenkins
@@ -178,7 +180,7 @@ metadata:
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-spec:
+spec:                                                           #desired characteristics of a volume requested by a pod author
   accessModes:
     - "ReadWriteOnce"
   resources:
@@ -188,7 +190,7 @@ spec:
 # Source: jenkins/templates/rbac.yaml
 # This role is used to allow Jenkins scheduling of agents via Kubernetes plugin.
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: Role                                                      # Role (contains rules that represent a set of permission within a particular namespace)
 metadata:
   name: jenkins-schedule-agents
   namespace: default
@@ -198,7 +200,7 @@ metadata:
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-rules:
+rules:                                                           # all the PolicyRules for this Role
 - apiGroups: [""]
   resources: ["pods", "pods/exec", "pods/log", "persistentvolumeclaims", "events"]
   verbs: ["get", "list", "watch"]
@@ -210,7 +212,7 @@ rules:
 # The sidecar container which is responsible for reloading configuration changes
 # needs permissions to watch ConfigMaps
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: Role                                                        # Role
 metadata:
   name: jenkins-casc-reload
   namespace: default
@@ -220,7 +222,7 @@ metadata:
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-rules:
+rules:                                                             # PolicyRules for this role
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: ["get", "watch", "list"]
@@ -229,7 +231,7 @@ rules:
 # We bind the role to the Jenkins service account. The role binding is created in the namespace
 # where the agents are supposed to run.
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: RoleBinding                                               #RoleBinding (grants the permissions defined in a role to a user or set of users)
 metadata:
   name: jenkins-schedule-agents
   namespace: default
@@ -239,18 +241,18 @@ metadata:
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-roleRef:
+roleRef:                                                      #can reference a Role in the current namespace or a ClusterRole in the global namespace.
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: jenkins-schedule-agents
-subjects:
+subjects:                                                         #references to the objects the role applies to.
 - kind: ServiceAccount
   name: jenkins
   namespace: default
 ---
 # Source: jenkins/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: RoleBinding                                                 #RoleBinding
 metadata:
   name: jenkins-watch-configmaps
   namespace: default
@@ -260,18 +262,18 @@ metadata:
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-roleRef:
+roleRef:                                                          # reference a Role
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: jenkins-casc-reload
-subjects:
+subjects:                                                         # The objects the Role applies to 
 - kind: ServiceAccount
   name: jenkins
   namespace: default
 ---
 # Source: jenkins/templates/jenkins-agent-svc.yaml
 apiVersion: v1
-kind: Service
+kind: Service                                                     # Service (method for exposing a network application that is running as one or more Pods in your cluster)
 metadata:
   name: jenkins-agent
   namespace: default
@@ -281,19 +283,20 @@ metadata:
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-spec:
-  ports:
+spec:                                                             # the behavior of a service
+  ports:                                                          # The list of ports that are exposed by this service.                                                      
     - port: 50000
       targetPort: 50000
       name: agent-listener
-  selector:
+  # Relation (dotted line) : StatefulSet jenkins
+  selector:                                                       # Route service traffic to pods with label keys and values matching this selector.
     "app.kubernetes.io/component": "jenkins-controller"
     "app.kubernetes.io/instance": "jenkins"
-  type: ClusterIP
+  type: ClusterIP                                                 # determines how the Service is exposed.
 ---
 # Source: jenkins/templates/jenkins-controller-svc.yaml
 apiVersion: v1
-kind: Service
+kind: Service                                                     # Jenkins service 
 metadata:
   name: jenkins
   namespace: default
@@ -303,11 +306,12 @@ metadata:
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-spec:
+spec:                                                             # Service behaviour      
   ports:
     - port: 8080
       name: http
       targetPort: 8080
+  # Relation (dotted line) : StatefulSet jenkins
   selector:
     "app.kubernetes.io/component": "jenkins-controller"
     "app.kubernetes.io/instance": "jenkins"
@@ -315,7 +319,7 @@ spec:
 ---
 # Source: jenkins/templates/jenkins-controller-statefulset.yaml
 apiVersion: apps/v1
-kind: StatefulSet
+kind: StatefulSet                                                 # StatefulSet runs a group of Pods, and maintains a sticky identity for each of those Pods.
 metadata:
   name: jenkins
   namespace: default
@@ -325,14 +329,15 @@ metadata:
     "app.kubernetes.io/managed-by": "Helm"
     "app.kubernetes.io/instance": "jenkins"
     "app.kubernetes.io/component": "jenkins-controller"
-spec:
-  serviceName: jenkins
-  replicas: 1
-  selector:
+spec:                                                             # defines the desired identities of pods in this set.
+  # Relation : Service Jenkins
+  serviceName: jenkins                                            # name of the service that governs this StatefulSet. This service must exist before the StatefulSet, and is responsible for the network identity of the set.
+  replicas: 1                                                     # desired number of replicas of the given Template
+  selector:                                                       # label query over pods that should match the replica count. It must match the pod template's labels. 
     matchLabels:
       "app.kubernetes.io/component": "jenkins-controller"
       "app.kubernetes.io/instance": "jenkins"
-  template:
+  template:                                                       # object that describes the pod that will be created if insufficient replicas are detected.
     metadata:
       labels:
         "app.kubernetes.io/name": 'jenkins'
@@ -342,15 +347,16 @@ spec:
       annotations:
         checksum/config: 8cb4c8ee99b7496cee950a701ec70773a22bacdd9d147c55d9b3879c3191c9b7
     spec:
-      enableServiceLinks: false
-      securityContext:
+      enableServiceLinks: false                                 # indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links.
+      securityContext:                                          # pod-level security attributes and common container settings
     
         runAsUser: 1000
         fsGroup: 1000
         runAsNonRoot: true
-      serviceAccountName: "jenkins"
-      automountServiceAccountToken: true
-      initContainers:
+      # Relation : Jenkins ServiceAccount
+      serviceAccountName: "jenkins"                             # name of the ServiceAccount to use to run this pod.
+      automountServiceAccountToken: true                        # indicates whether a service account token should be automatically mounted.
+      initContainers:                                           # List of initialization containers belonging to the pod.
         - name: config-reload-init
           image: "docker.io/kiwigrid/k8s-sidecar:1.30.1"
           imagePullPolicy: IfNotPresent
@@ -406,7 +412,7 @@ spec:
               name: plugin-dir
             - mountPath: /tmp
               name: tmp-volume
-      containers:
+      containers:                                              # List of containers belonging to the pod.
         - name: jenkins
           image: "docker.io/jenkins/jenkins:2.492.1-jdk17"
           imagePullPolicy: "Always"
@@ -520,10 +526,11 @@ spec:
             - name: jenkins-home
               mountPath: /var/jenkins_home
 
-      volumes:
+      volumes:                                                 # List of volumes that can be mounted by containers belonging to the pod.
       - name: plugins
         emptyDir: {}
       - name: jenkins-config
+        # Relation: Jenkins ConfigMap
         configMap:
           name: jenkins
       - name: plugin-dir
@@ -531,6 +538,7 @@ spec:
       - name: jenkins-secrets
         projected:
           sources:
+          # Relation: Jenkins Secret
           - secret:
               name: jenkins
               items:
@@ -541,6 +549,7 @@ spec:
       - name: jenkins-cache
         emptyDir: {}
       - name: jenkins-home
+        # Relation : PVC Jenkins
         persistentVolumeClaim:
           claimName: jenkins
       - name: sc-config-volume
@@ -550,13 +559,13 @@ spec:
 ---
 # Source: jenkins/templates/tests/test-config.yaml
 apiVersion: v1
-kind: ConfigMap
+kind: ConfigMap                                                         # ConfigMap jenkins-tests
 metadata:
   name: jenkins-tests
   namespace: default
   annotations:
     "helm.sh/hook": test
-data:
+data:                                                                   # The config data
   run.sh: |-
     @test "Testing Jenkins UI is accessible" {
       curl --retry 48 --retry-delay 10 jenkins:8080/login
@@ -564,14 +573,14 @@ data:
 ---
 # Source: jenkins/templates/tests/jenkins-test.yaml
 apiVersion: v1
-kind: Pod
+kind: Pod                                                               # Pods are the smallest deployable units of computing that you can create and manage in Kubernetes.
 metadata:
   name: "jenkins-ui-test-8c2sx"
   namespace: default
   annotations:
     "helm.sh/hook": test-success
-spec:
-  initContainers:
+spec:                                                                    # Specification of the desired behavior of the pod.
+  initContainers:                                                        # List of initialization containers belonging to the pod.
     - name: "test-framework"
       image: "docker.io/bats/bats:1.11.1"
       command:
@@ -585,7 +594,7 @@ spec:
       volumeMounts:
       - mountPath: /tools
         name: tools
-  containers:
+  containers:                                                             # List of containers belonging to the pod.
     - name: jenkins-ui-test
       image: "docker.io/jenkins/jenkins:2.492.1-jdk17"
       command: ["/tools/bats/bin/bats", "-t", "/tests/run.sh"]
@@ -595,10 +604,10 @@ spec:
         readOnly: true
       - mountPath: /tools
         name: tools
-  volumes:
+  volumes:                                                               # List of volumes that can be mounted by containers belonging to the pod. 
   - name: tests
     configMap:
       name: jenkins-tests
   - name: tools
     emptyDir: {}
-  restartPolicy: Never
+  restartPolicy: Never                                                   # Restart policy for all containers within the pod.

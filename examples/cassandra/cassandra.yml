@@ -1,35 +1,37 @@
+#Cassandra Service 
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app: cassandra
   name: cassandra
-spec:
-  clusterIP: None
-  ports:
+spec:                 #Spec defines the behavior of a service.
+  clusterIP: None     #headless service
+  ports:              #The list of ports that are exposed by this service.
   - port: 9042
   selector:
-    app: cassandra
+    app: cassandra    #Targets pods with this label
 ---
+#Cassandra StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: cassandra
+  name: cassandra     
   labels:
     app: cassandra
-spec:
-  serviceName: cassandra
-  replicas: 3
-  selector:
+spec:                             #Spec defines the desired identities of pods in this set.
+  serviceName: cassandra          #name of the service that governs this StatefulSet - responsible for the network identity of the set
+  replicas: 3                     #number of Pods created by the StatefulSet controller
+  selector:                       #must match the pod template's labels
     matchLabels:
       app: cassandra
-  template:
+  template:                       #the object that describes the pod that will be created
     metadata:
       labels:
         app: cassandra
     spec:
       terminationGracePeriodSeconds: 500
-      containers:
+      containers:                 #List of containers belonging to the pod. 
       - name: cassandra
         image: gcr.io/google-samples/cassandra:v13
         imagePullPolicy: Always
@@ -53,14 +55,14 @@ spec:
           capabilities:
             add:
               - IPC_LOCK
-        lifecycle:
+        lifecycle:                        #Actions that the management system should take in response to container lifecycle events.
           preStop:
             exec:
               command: 
               - /bin/sh
               - -c
               - nodetool drain
-        env:
+        env:                              #List of environment variables to set in the container.
           - name: MAX_HEAP_SIZE
             value: 512M
           - name: HEAP_NEWSIZE
@@ -94,9 +96,12 @@ spec:
   # These are converted to volume claims by the controller
   # and mounted at the paths mentioned above.
   # do not use these in production until ssd GCEPersistentDisk or other ssd pd
-  volumeClaimTemplates:
+  volumeClaimTemplates:                       #list of claims that pods are allowed to reference
   - metadata:
       name: cassandra-data
+      #CHANGE : add labels
+      labels:
+        app: cassandra
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: fast
@@ -104,10 +109,14 @@ spec:
         requests:
           storage: 512M #CHANGED: instead of 1Gi
 ---
+# Fast StorageClass
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: fast
+  #CHANGE : add labels
+  labels:
+    app: cassandra
 provisioner: k8s.io/minikube-hostpath
 parameters:
   type: pd-ssd
