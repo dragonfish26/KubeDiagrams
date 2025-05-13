@@ -876,41 +876,31 @@ def process_resource(resource):
         """
             Process a resource.
         """
+        #CHANGE : add a copy of clusters
+        clusters_copy = copy.deepcopy(clusters)
+
+        label_replacements = {
+            "release": "app.kubernetes.io/instance",
+            "chart": "helm.sh/chart",
+            "app": "app.kubernetes.io/name",
+            "component": "app.kubernetes.io/component"
+        }
+
         for cluster_config in clusters:
             if "label" in cluster_config:
 
                 #CHANGE
-                
-                labelIsRecommended = cluster_config.get("recommended", False)
-
-                if labelIsRecommended:
-                    recommended_cluster_config = cluster_config
-
-                else:
-                    if cluster_config["label"] == "release":
-                        replacement_label = "app.kubernetes.io/instance"
-                    elif cluster_config["label"] == "chart":
-                        replacement_label = "helm.sh/chart"
-                    elif cluster_config["label"] == "app":
-                        replacement_label = "app.kubernetes.io/name"
-                    elif cluster_config["label"] == "service" or cluster_config["label"] == "tier":
-                        replacement_label = "app.kubernetes.io/component"
-                    else:
-                        replacement_label = cluster_config["label"]
-
-                    # Find the recommended cluster config for the replacement label
-                    recommended_cluster_config = next(
-                        (c for c in clusters if c.get("label") == replacement_label and c.get("recommended", True)),
-                        cluster_config  # Fallback to the current config if no replacement is found
-                    )
-
-                    print("+++")
-                    print(cluster_config["title"])
-                    print(recommended_cluster_config.get("title"))
-                
 
                 label = cluster_config["label"]
                 labels = query_path(resource, "metadata.labels")
+
+                replacement_label = label_replacements.get(label, label)
+
+                # Find a recommended cluster config with the replacement label
+                recommended_cluster_config = next(
+                    (c for c in clusters_copy if c.get("label") == replacement_label and c.get("recommended", True)),
+                    cluster_config
+                )
 
                 if isinstance(labels, dict) and label in labels:
 
@@ -952,7 +942,7 @@ def process_resource(resource):
                     clusters.remove(cluster_config)
                     return process_clusters(cluster, resource, clusters)
                 """
-                
+
         return cluster
 
     cluster = process_clusters(
@@ -1012,6 +1002,7 @@ for id, resource in resources.items():
 
 resource_cluster.display()
 
+parent_nodes = {}
 
 def process_edges():
     """
@@ -1042,6 +1033,14 @@ def process_edges():
             edge_from = edge[0]
             edge_to = edge[1]
             edge_name = edge[2]
+
+            # CHANGE 
+            if edge_to in parent_nodes:
+                parent_nodes[edge_to].append(edge_from)
+            else:
+                parent_nodes[edge_to] = [edge_from]
+            # END OF CHANGE
+
             try:
                 if isinstance(edge_name, dict):
                     edge_configuration = edge_name
@@ -1061,6 +1060,59 @@ def process_edges():
                             " by K8s clusters.")
                     continue # skip this edge as the resource is provided by K8s clusters.
                 error(resource, None, f"{ke} resource not found")
+
+
+#CHANGE
+def label_intersection_all(cluster, parent_nodes, clusters):
+    """
+    Update clusters for all resources based on the intersection of parent labels.
+    """
+    clusters_copy = copy.deepcopy(clusters)
+
+    for resource_id, parent_node_ids in parent_nodes.items():
+        resource = resources.get(resource_id)
+        if not resource:
+            continue
+
+        # Collect label sets from parents
+        parent_label_sets = []
+        for parent_id in parent_node_ids:
+            parent = resources.get(parent_id)
+            if not parent:
+                continue
+            labels = query_path(parent, "metadata.labels", {})
+            if isinstance(labels, dict):
+                parent_label_sets.append(set(labels.items()))
+
+        if not parent_label_sets:
+            continue
+
+        # Get intersection of label-value pairs
+        common_labels = set.intersection(*parent_label_sets)
+        if not common_labels:
+            continue
+
+        intersection_dict = dict(common_labels)
+
+        # Apply first matching cluster config
+        for cluster_config in clusters_copy:
+            label = cluster_config.get("label")
+            if label and label in intersection_dict:
+                label_value = intersection_dict[label]
+                cluster_config_title = cluster_config["title"]
+
+                # Format cluster name
+                if "{" in cluster_config_title:
+                    cluster_name = cluster_config_title.format(label_value)
+                else:
+                    cluster_name = f"{cluster_config_title}: {label_value}"
+
+                new_cluster = cluster.get_or_create_cluster(cluster_name)
+                new_cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
+                break  # Only apply the first matching config
+
+    return cluster
+#END OF CHANGE
 
 def create_nodes(cluster):
     """
