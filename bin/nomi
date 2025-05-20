@@ -888,7 +888,7 @@ def process_resource(resource):
 
         for cluster_config in clusters:
             if "label" in cluster_config:
-
+                
                 #CHANGE
 
                 label = cluster_config["label"]
@@ -1049,9 +1049,9 @@ def process_edges():
 
             # CHANGE 
             if edge_to in parent_nodes:
-                parent_nodes[edge_from].append(edge_to)
+                parent_nodes[edge_to].append(edge_from)
             else:
-                parent_nodes[edge_from] = [edge_to]
+                parent_nodes[edge_to] = [edge_from]
             # END OF CHANGE
 
 
@@ -1076,201 +1076,97 @@ def process_edges():
                 error(resource, None, f"{ke} resource not found")
 
 
-#CHANGE
-def label_intersection_all(cluster, parent_nodes, clusters):
+def find_cluster_by_labels(cluster, inter, label_to_title):
     """
-    Update clusters for all resources based on the intersection of parent labels.
+    Recursively find a nested cluster that matches all key-value pairs in `inter`,
+    regardless of the order in which they appear.
     """
-    clusters_copy = copy.deepcopy(clusters)
+    if not inter:
+        return cluster  # All labels matched
 
-    for resource_id, parent_node_ids in parent_nodes.items():
-        resource = resources.get(resource_id)
-        if not resource:
-            continue
+    for subcluster in cluster.clusters.values():
+        #print(f"Checking subcluster: {subcluster.name}")
+        for key, value in inter.items():
+            target_name = f"{label_to_title[key]}: {value}"
+            #print(f"Searching for cluster with name: {target_name}")
+            if subcluster.name == target_name:
+                # Found a match, recurse with this key removed
+                new_inter = dict(inter)
+                del new_inter[key]
+                result = find_cluster_by_labels(subcluster, new_inter, label_to_title)
+                if result:
+                    return result
 
-        # Collect label sets from parents
-        parent_label_sets = []
-        for parent_id in parent_node_ids:
-            parent = resources.get(parent_id)
-            if not parent:
-                continue
-            labels = query_path(parent, "metadata.labels", {})
-            if isinstance(labels, dict):
-                parent_label_sets.append(set(labels.items()))
+    # No matching path found
+    return None
 
-        if not parent_label_sets:
-            continue
 
-        # Get intersection of label-value pairs
-        common_labels = set.intersection(*parent_label_sets)
-        if not common_labels:
-            continue
+def intersection_try(cluster, parent_nodes):
 
-        intersection_dict = dict(common_labels)
-
-        # Apply first matching cluster config
-        for cluster_config in clusters_copy:
-            label = cluster_config.get("label")
-            if label and label in intersection_dict:
-                label_value = intersection_dict[label]
-                cluster_config_title = cluster_config["title"]
-
-                # Format cluster name
-                if "{" in cluster_config_title:
-                    cluster_name = cluster_config_title.format(label_value)
-                else:
-                    cluster_name = f"{cluster_config_title}: {label_value}"
-
-                cluster = cluster.get_or_create_cluster(cluster_name)
-                cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
-                break  # Only apply the first matching config
-
-    return cluster
-#END OF CHANGE
-
-def label_intersection_all1(cluster, parent_nodes, clusters):
-    """
-    Update clusters for all resources based on the intersection of parent labels.
-    """
-    clusters_copy = copy.deepcopy(clusters)
-
-    # Collect resources to move
-    resources_to_move = []
-
-    for resource_id, resource in list(cluster.resources.items()):
-        # Check if the resource has parent nodes
-        if resource_id not in parent_nodes:
-            continue
-
-        # Collect label sets from parent nodes
-        parent_label_sets = []
-        for parent_id in parent_nodes[resource_id]:
-            parent = resources.get(parent_id)
-            if not parent:
-                continue
-            labels = query_path(parent, "metadata.labels", {})
-            if isinstance(labels, dict):
-                parent_label_sets.append(set(labels.items()))
-
-        # Skip if no valid parent labels
-        if not parent_label_sets:
-            continue
-
-        # Get intersection of label-value pairs
-        common_labels = set.intersection(*parent_label_sets)
-        if not common_labels:
-            continue
-
-        intersection_dict = dict(common_labels)
-
-        # Recursively create clusters based on the intersection of labels
-        current_cluster = cluster
-        for cluster_config in clusters_copy:
-            label = cluster_config.get("label")
-            if label and label in intersection_dict:
-                label_value = intersection_dict[label]
-                cluster_config_title = cluster_config["title"]
-
-                # Format cluster name
-                if "{" in cluster_config_title:
-                    cluster_name = cluster_config_title.format(label_value)
-                else:
-                    cluster_name = f"{cluster_config_title}: {label_value}"
-
-                # Create or get the cluster
-                current_cluster = current_cluster.get_or_create_cluster(cluster_name)
-                current_cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
-                #clusters_copy.remove(cluster_config)
-
-        # Move the resource to the new cluster
-        current_cluster.resources[resource_id] = resource
-        resources_to_move.append(resource_id)
-
-    # Remove moved resources from the original cluster
-    for resource_id in resources_to_move:
-        del cluster.resources[resource_id]
-
-    # Recursively process sub-clusters
     for sub_cluster in cluster.clusters.values():
-       label_intersection_all(sub_cluster, parent_nodes, clusters)
+        if sub_cluster.name.startswith("Namespace:"):
+            
+            #for namespace_resource in sub_cluster.resources.values():
+                #print(namespace_resource.get("metadata", {}).get("name"))
 
-    return cluster
+            print("--- Debug ---")
+            print(f"Processing cluster: {sub_cluster.name}")
+            print(f"Sub-cluster '{sub_cluster.name}' has {len(sub_cluster.resources)} resources.")
+            print("---")
+            for resource_id, resource in list(sub_cluster.resources.items()):  # Use list() to create a copy
 
-def label_intersection_all2(cluster, parent_nodes, clusters):
-    """
-    Update clusters for all resources based on the intersection of parent labels,
-    but only for the Namespace cluster.
-    """
-    # Process only Namespace clusters
-    if not cluster.name.startswith("Namespace:"):
-        print(f"Skipping cluster: {cluster.name}")
-        return cluster
+                # Check if the resource has parent nodes
+                if resource_id not in parent_nodes:
+                    continue
 
-    clusters_copy = copy.deepcopy(clusters)
+                # Collect label sets from parent nodes
+                parent_label_sets = []
+                for parent_id in parent_nodes[resource_id]:
+                    parent = resources.get(parent_id)
+                    if not parent:
+                        continue
+                    labels = query_path(parent, "metadata.labels", {})
+                    if isinstance(labels, dict):
+                        parent_label_sets.append(set(labels.items()))
 
-    # Collect resources to move
-    resources_to_move = []
+                # Skip if no valid parent labels
+                if not parent_label_sets:
+                    continue
 
-    print(f"Processing cluster: {cluster.name}")
+                # Get intersection of label-value pairs
+                common_labels = set.intersection(*parent_label_sets)
+                if not common_labels:
+                    continue
 
-    for resource_id, resource in list(cluster.resources.items()):
-        # Check if the resource has parent nodes
-        if resource_id not in parent_nodes:
-            continue
+                intersection_dict = dict(common_labels)
 
-        # Collect label sets from parent nodes
-        parent_label_sets = []
-        for parent_id in parent_nodes[resource_id]:
-            parent = resources.get(parent_id)
-            if not parent:
-                continue
-            labels = query_path(parent, "metadata.labels", {})
-            if isinstance(labels, dict):
-                parent_label_sets.append(set(labels.items()))
+                cluster_labels = [cluster.get("label") for cluster in config.get("clusters", []) if "label" in cluster]
+                #print(cluster_labels)
 
-        # Skip if no valid parent labels
-        if not parent_label_sets:
-            continue
+                # Filter intersection_dict to include only keys that are in cluster_labels
+                intersection_dict = {key: value for key, value in intersection_dict.items() if key in cluster_labels}
+                if not intersection_dict:
+                    continue
 
-        # Get intersection of label-value pairs
-        common_labels = set.intersection(*parent_label_sets)
-        if not common_labels:
-            continue
+                print(f'{resource_id}: {resource.get("metadata", {}).get("name")}')
 
-        intersection_dict = dict(common_labels)
+                print(intersection_dict)
+                label_to_title = {cluster["label"]: cluster["title"] for cluster in config.get("clusters", []) if "label" in cluster and "title" in cluster}
+                print(label_to_title)
+                inter_cluster = find_cluster_by_labels(sub_cluster, intersection_dict, label_to_title)
+                print(f"inter_cluster: {inter_cluster}")
+                
+                if inter_cluster is not None:
+                    print(f"Found cluster: {inter_cluster.name}")
+                    # Move the resource to the found cluster
+                    inter_cluster.resources[resource_id] = resource
+                    del sub_cluster.resources[resource_id]
+                print("---")
 
-        # Recursively create clusters based on the intersection of labels
-        for cluster_config in clusters_copy:
-            label = cluster_config.get("label")
-            if label and label in intersection_dict:
-                label_value = intersection_dict[label]
-                cluster_config_title = cluster_config["title"]
 
-                # Format cluster name
-                if "{" in cluster_config_title:
-                    cluster_name = cluster_config_title.format(label_value)
-                else:
-                    cluster_name = f"{cluster_config_title}: {label_value}"
 
-                # Create or get the cluster directly on the original cluster
-                cluster = cluster.get_or_create_cluster(cluster_name)
-                cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
+                
 
-        # Move the resource to the new cluster
-        cluster.resources[resource_id] = resource
-        resources_to_move.append(resource_id)
-
-    # Remove moved resources from the original cluster
-    for resource_id in resources_to_move:
-        del cluster.resources[resource_id]
-
-    # Recursively process sub-clusters
-    for sub_cluster in cluster.clusters.values():
-        label_intersection_all2(sub_cluster, parent_nodes, clusters)
-
-    return cluster
-
-    
 
 def create_nodes(cluster):
     """
@@ -1339,10 +1235,12 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
     # Generate diagram edges
     process_edges()
 
-    #ßprint(parent_nodes)
+    #print(parent_nodes)
 
+    
     # Update clusters based on label intersections
-    resource_cluster = label_intersection_all2(resource_cluster, parent_nodes, copy.deepcopy(config.get("clusters", [])))
+    #resource_cluster = label_intersection_all2(resource_cluster, parent_nodes, copy.deepcopy(config.get("clusters", [])))
+    intersection_try(resource_cluster, parent_nodes)
 
     print("---")
     print("Clusters after label intersection:")
@@ -1352,14 +1250,14 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
     print("+++")
     print(resource_cluster.clusters)
     
-
+    """
     # Generate diagram nodes
     diagram_nodes = {}
     #create_custom_clusters_nodes(None, query_path(config, "diagram", {}))
 
     # Generate diagram edges
     #process_edges()
-
+    """
 
 
 
