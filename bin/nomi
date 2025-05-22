@@ -1086,15 +1086,17 @@ def find_cluster_by_labels2(cluster, inter, label_to_title):
         return cluster  # All labels matched
 
     for subcluster in cluster.clusters.values():
+
+        if subcluster.name.startswith("Namespace:"):
+            result = find_cluster_by_labels2(subcluster, inter, label_to_title)
+            if result:
+                return result
+                
         #print(f"Checking subcluster: {subcluster.name}")
         # Ex subcluster name: Release: elasticsearch
         for key, value in inter.items():
             target_name = f"{label_to_title[key]}: {value}"
             #print(f"Searching for cluster with name: {target_name}")
-            if subcluster.name.startswith("Namespace:"):
-                result = find_cluster_by_labels2(subcluster, inter, label_to_title)
-                if result:
-                    return result
             if subcluster.name == target_name:
                 new_inter = dict(inter)
                 del new_inter[key]
@@ -1122,6 +1124,20 @@ def resource_has_parent_labels(resource, intersection_dict):
     if set(resource_cluster_labels.keys()) == set(intersection_labels):
         return True  
     return False  
+
+def find_cluster_path(cluster, target_id, path=None):
+    if path is None:
+        path = []
+
+    if id(cluster) == target_id:
+        print("Path found: " + " -> ".join(path + [cluster.name]))
+        return True
+
+    for name, sub in cluster.clusters.items():
+        if find_cluster_path(sub, target_id, path + [cluster.name]):
+            return True
+
+    return False
 
 
 def intersection_try2(cluster, parent_nodes):
@@ -1173,21 +1189,32 @@ def intersection_try2(cluster, parent_nodes):
 
         #Ex label_to_title = {'app.kubernetes.io/instance': 'K8s Instance'...}
         label_to_title = {cluster["label"]: cluster["title"] for cluster in config.get("clusters", []) if "label" in cluster and "title" in cluster}
+        print(f"Calling find_cluster_by_labels2 with root ID: {id(resource_cluster)}")
         inter_cluster = find_cluster_by_labels2(resource_cluster, intersection_dict, label_to_title)
-        print(f"inter_cluster: {inter_cluster}")
+        print(f"Returned inter_cluster ID: {id(inter_cluster)}")
+        print(f"[DEBUG] Looking for cluster with id={id(inter_cluster)} and name={inter_cluster.name}")
+        found = find_cluster_path(resource_cluster, id(inter_cluster))
+        if not found:
+            print(f"[WARNING] Cluster {inter_cluster.name} not part of resource_cluster tree!")
+
+        #print(f"inter_cluster: {inter_cluster}")
         
         if inter_cluster is not None:
+            print("Resource ID:", resource_id)
             print(f"Found cluster: {inter_cluster.name}")
             print(inter_cluster.resources.__len__())
+            del cluster.resources[resource_id]
             inter_cluster.resources[resource_id] = resource
             print(inter_cluster.resources.__len__())
-            del cluster.resources[resource_id]
         print("---")
 
     for subcluster in cluster.clusters.values():
         intersection_try2(subcluster, parent_nodes)
         
 # END OF CHANGE
+
+
+
 
 def create_nodes(cluster):
     """
@@ -1258,7 +1285,7 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
 
     #print(parent_nodes)
 
-    
+    print(id(resource_cluster))
     # Update clusters based on label intersections
     #resource_cluster = label_intersection_all2(resource_cluster, parent_nodes, copy.deepcopy(config.get("clusters", [])))
     intersection_try2(resource_cluster, parent_nodes)
@@ -1267,9 +1294,10 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
     print("Clusters after label intersection:")
     print("---")
     resource_cluster.display()
-    print(resource_cluster.resources.__len__())
+    #print(resource_cluster.resources.__len__())
     print("+++")
-    print(resource_cluster.clusters)
+    #print(resource_cluster.clusters)
+    print(id(resource_cluster))
     
     """
     # Generate diagram nodes
