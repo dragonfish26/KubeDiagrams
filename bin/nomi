@@ -853,15 +853,55 @@ if args.config is not None:
 resources = {} # a map of all resources
 resource_cluster = ResourceCluster("ROOT") # Clustering resources
 
+#CHANGE 
+
+def update_resource_labels(resource):
+    """
+        Update resource labels.
+    """
+    label_replacements = {
+            "release": "app.kubernetes.io/instance",
+            "chart": "helm.sh/chart",
+            "app": "app.kubernetes.io/name",
+            "component": "app.kubernetes.io/component"
+        }
+    
+    labels = query_path(resource, "metadata.labels")
+    '''
+    selector = query_path(resource, "spec.selector")
+    if selector is not None:
+        labels = selector.get("matchLabels")
+        if labels is None:
+            labels = selector.get("matchExpressions")
+            if labels is not None:
+                labels = {e["key"]: e["values"] for e in labels}
+    '''
+    print("Before labels:", labels)
+
+    if labels is None:
+        return
+    for label, value in list(labels.items()):
+        new_label = label_replacements.get(label, label)
+        if new_label != label:
+            labels[new_label] = value
+            del labels[label]
+
+    print("After labels:", labels)
+
+
 def process_resource(resource):
     """
         Process a resource.
     """
+    #CHANGE: function to change recommended labels        
+    update_resource_labels(resource)
+
     cluster = resource_cluster
     name = get_name(resource)
     if get_node_config(resource).get("scope") == "Cluster":
         rid = name + "/" + get_type(resource)
         resources[rid] = resource
+
         if not(args.without_namespace) and resource.get("kind") == "Namespace":
             cluster = resource_cluster.get_or_create_cluster(f"Namespace: {name}")
     else: # scope = Namespaced
@@ -988,6 +1028,38 @@ for filename in args.filename:
     except yaml.constructor.ConstructorError as error:
         print("Error: " + str(error).replace('\n', ' ') + "!")
 
+
+def warning_cluster(cluster):
+    ''' 
+    for sub_cluster in cluster.clusters.values():
+        if sub_cluster.name.startswith("Namespace:"):
+            new_warning_cluster = sub_cluster.get_or_create_cluster("Warning")
+            new_warning_cluster.graph_attr.update({
+                "label": "Warning",
+                "style": "filled",
+                "fillcolor": "#ffcc00"
+            })
+            for resource_id, resource in list(sub_cluster.resources.items()):
+                del sub_cluster.resources[resource_id]
+                new_warning_cluster.resources[resource_id] = resource
+            break
+        else:
+            warning_cluster(sub_cluster)
+    '''
+
+
+    new_warning_cluster = cluster.get_or_create_cluster("Warning")
+    new_warning_cluster.graph_attr.update({
+        "label": "Warning",
+        "style": "filled",
+        "fillcolor": "#ffcc00"
+    })
+    for resource_id, resource in list(cluster.resources.items()):
+        del cluster.resources[resource_id]
+        new_warning_cluster.resources[resource_id] = resource
+                
+warning_cluster(resource_cluster)            
+
 # Print loaded Kubernetes resources
 if args.verbose:
     print("Loaded Kubernetes resources:")
@@ -998,7 +1070,9 @@ if args.verbose:
 for id, resource in resources.items():
     labels = resource.get("metadata", {}).get("labels")
     print('---')
-    print(id, labels)'''
+    #print(id, labels)
+    print(id, resource)
+'''
 
 #resource_cluster.display()
 
@@ -1029,18 +1103,6 @@ def process_edges():
         for eidx, edge in enumerate(edges):
             if len(edge) == 2:
                 edges[eidx] = [resource_id, edge[0], edge[1]]
-                
-                """ 
-                # CHANGE 
-                print("---")
-                print(f"edge_from: {resource_id}, edge_to: {edge[0]}")
-
-                if edge[0] in parent_nodes:
-                    parent_nodes[edge[0]].append(resource_id)
-                else:
-                    parent_nodes[edge[0]] = [resource_id]
-                # END OF CHANGE
-                """
 
         for edge in edges:
             edge_from = edge[0]
@@ -1077,7 +1139,7 @@ def process_edges():
 
 # CHANGE
 
-def find_cluster_by_labels2(cluster, inter, label_to_title):
+def find_cluster_by_labels(cluster, inter, label_to_title):
     """
     Recursively find a nested cluster that matches all key-value pairs in `inter`,
     regardless of the order in which they appear.
@@ -1088,7 +1150,7 @@ def find_cluster_by_labels2(cluster, inter, label_to_title):
     for subcluster in cluster.clusters.values():
 
         if subcluster.name.startswith("Namespace:"):
-            result = find_cluster_by_labels2(subcluster, inter, label_to_title)
+            result = find_cluster_by_labels(subcluster, inter, label_to_title)
             if result:
                 return result
                 
@@ -1100,7 +1162,7 @@ def find_cluster_by_labels2(cluster, inter, label_to_title):
             if subcluster.name == target_name:
                 new_inter = dict(inter)
                 del new_inter[key]
-                result = find_cluster_by_labels2(subcluster, new_inter, label_to_title)
+                result = find_cluster_by_labels(subcluster, new_inter, label_to_title)
                 if result:
                     return result
 
@@ -1125,8 +1187,10 @@ def resource_has_parent_labels(resource, intersection_dict):
         return True  
     return False  
 
+loop_count = 0
 
-def intersection_try2(cluster, parent_nodes):
+def label_intersection(cluster, parent_nodes):
+    global loop_count
     '''
     Recursively move resources to their respective clusters based on label intersections.
     '''
@@ -1160,36 +1224,30 @@ def intersection_try2(cluster, parent_nodes):
         intersection_dict = dict(common_labels)
 
         cluster_labels = [cluster.get("label") for cluster in config.get("clusters", []) if "label" in cluster]
-        #print(cluster_labels)
 
         # Ex: {'app': 'elasticsearch-master', 'release': 'elasticsearch', 'chart': 'elasticsearch'}
         intersection_dict = {key: value for key, value in intersection_dict.items() if key in cluster_labels}
         if not intersection_dict:
             continue
-        print("intersection_dict:", intersection_dict)
 
         # Skip if the resource already has all the labels in the intersection_dict
         if resource_has_parent_labels(resource, intersection_dict):
-            #print(f"Resource {resource_id} already has all labels in the intersection_dict.")
             continue
 
         #Ex label_to_title = {'app.kubernetes.io/instance': 'K8s Instance'...}
         label_to_title = {cluster["label"]: cluster["title"] for cluster in config.get("clusters", []) if "label" in cluster and "title" in cluster}
-        inter_cluster = find_cluster_by_labels2(resource_cluster, intersection_dict, label_to_title)
+        inter_cluster = find_cluster_by_labels(resource_cluster, intersection_dict, label_to_title)
 
-        #print(f"inter_cluster: {inter_cluster}")
         
         if inter_cluster is not None:
-            print("Resource ID:", resource_id)
-            print(f"Found cluster: {inter_cluster.name}")
-            #print(inter_cluster.resources.__len__())
             del cluster.resources[resource_id]
             inter_cluster.resources[resource_id] = resource
-            #print(inter_cluster.resources.__len__())
         print("---")
+        print(loop_count, "Resource ID:", resource_id)
+        loop_count += 1
 
     for subcluster in cluster.clusters.values():
-        intersection_try2(subcluster, parent_nodes)
+        label_intersection(subcluster, parent_nodes)
         
 # END OF CHANGE
 
@@ -1262,12 +1320,12 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
 
     # Update clusters based on label intersections
     #resource_cluster = label_intersection_all2(resource_cluster, parent_nodes, copy.deepcopy(config.get("clusters", [])))
-    intersection_try2(resource_cluster, parent_nodes)
+    #label_intersection(resource_cluster, parent_nodes)
 
     print("---")
     print("Clusters after label intersection:")
     print("---")
-    resource_cluster.display()
+    #resource_cluster.display()
     
     """
     # Generate diagram nodes
