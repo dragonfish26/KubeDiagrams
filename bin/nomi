@@ -891,9 +891,7 @@ def process_resource(resource):
             label = cluster_config["label"]
             recommended_labels[label] = cluster_config.get("recommended_label", label)
 
-    #print("Recommended labels:", recommended_labels)
-
-    #update_resource_labels(resource, recommended_labels)
+    update_resource_labels(resource, recommended_labels)
 
     #END OF CHANGE
 
@@ -917,15 +915,6 @@ def process_resource(resource):
         """
             Process a resource.
         """
-        #CHANGE : add a copy of clusters
-        clusters_copy = copy.deepcopy(clusters)
-
-        label_replacements = {
-            "release": "app.kubernetes.io/instance",
-            "chart": "helm.sh/chart",
-            "app": "app.kubernetes.io/name",
-            "component": "app.kubernetes.io/component"
-        }
 
         for cluster_config in clusters:
             if "label" in cluster_config:
@@ -959,7 +948,7 @@ def process_resource(resource):
             )
     cluster.resources[rid] = resource
 
-    '''  
+    
     nodes_script = get_node_config(resource).get("nodes")
     if nodes_script is not None:
         nodes = []
@@ -975,7 +964,7 @@ def process_resource(resource):
             raise
         for node in nodes:
             process_resource(node)
-    '''
+    
     
 
 def draw_ressource(resource):
@@ -1007,22 +996,6 @@ def draw_ressource(resource):
                 resource,
                 copy.deepcopy(config.get("clusters", []))
             )
-
-    nodes_script = get_node_config(resource).get("nodes")
-    if nodes_script is not None:
-        nodes = []
-        try:
-            # pylint: disable-next=exec-used
-            exec(nodes_script)
-        except Exception as exc:
-            print("Error:", type(exc), ":", exc.args)
-            traceback.print_exc()
-            print("Nodes script:\n", nodes_script)
-            print("Resource:")
-            pprint(resource)
-            raise
-        for node in nodes:
-            process_resource(node)
 
 for filename in args.filename:
     try:
@@ -1082,34 +1055,25 @@ if args.verbose:
     print("Loaded Kubernetes resources:")
     resource_cluster.display()
 
-# CHANGE 
-'''
-for id, resource in resources.items():
-    labels = resource.get("metadata", {}).get("labels")
-    print('---')
-    #print(id, labels)
-    print(id, resource)
-'''
-
-#resource_cluster.display()
-
 parent_nodes = {}
 
-def process_edges():
+# CHANGE : PROCESS EDGES
+
+resource_edges = {}
+
+def collect_edges():
     """
-        Process diagram edges.
+    Collect all edges into `resource_edges` without drawing them.
     """
     for resource_id, resource in resources.items():
         if not get_node_config(resource).get("show", True):
-            continue # Skip this hidden resource.
+            continue  # Skip hidden resources
+
         edges = EdgesContext(resource_id, resource)
 
-        
-        # execute config code to generate edges
         code_to_exec = get_node_config(resource).get("edges")
         if code_to_exec:
             try:
-                # pylint: disable-next=exec-used
                 exec(code_to_exec)
             except Exception as exc:
                 print("Error:", type(exc), ":", exc.args)
@@ -1118,98 +1082,57 @@ def process_edges():
                 print("Resource:")
                 pprint(resource)
                 raise
-        
 
-        # generate diagram edges
         for eidx, edge in enumerate(edges):
             if len(edge) == 2:
                 edges[eidx] = [resource_id, edge[0], edge[1]]
 
+        resource_edges[resource_id] = edges
+
+def draw_edges():
+    """
+    Use previously collected edges to draw the diagram edges.
+    """
+    for resource_id, edges in resource_edges.items():
+        resource = resources[resource_id]
         for edge in edges:
             edge_from = edge[0]
             edge_to = edge[1]
             edge_name = edge[2]
 
-            # CHANGE 
+            try:
+                if isinstance(edge_name, dict):
+                    edge_config = edge_name
+                else:
+                    edge_config = get_edge_config(edge_name)
+
+                if edge_config.get("direction") == "up":
+                    _ = diagram_nodes[edge_to] \
+                        << Edge(**edge_config) \
+                        << diagram_nodes[edge_from]
+                else:
+                    _ = diagram_nodes[edge_from] \
+                        >> Edge(**edge_config) \
+                        >> diagram_nodes[edge_to]
+
+            except KeyError as ke:
+                if edge_to in config["cluster-resources"]:
+                    info(resource, None, f"Referenced {edge_to} is provided by the cluster.")
+                    continue
+                error(resource, None, f"{ke} resource not found")
+
+def build_parent_nodes():
+    """
+    Populate parent_nodes dict from collected edges.
+    """
+    for edges in resource_edges.values():
+        for edge in edges:
+            edge_from = edge[0]
+            edge_to = edge[1]
             if edge_to in parent_nodes:
                 parent_nodes[edge_to].append(edge_from)
             else:
                 parent_nodes[edge_to] = [edge_from]
-            # END OF CHANGE
-
-            '''  
-            try:
-                if isinstance(edge_name, dict):
-                    edge_configuration = edge_name
-                else:
-                    edge_configuration = get_edge_config(edge_name)
-                if edge_configuration.get("direction") == "up":
-                    _ = diagram_nodes[edge_to] \
-                        << Edge(**edge_configuration) \
-                        << diagram_nodes[edge_from]
-                else:
-                    _ = diagram_nodes[edge_from] \
-                        >> Edge(**edge_configuration) \
-                        >> diagram_nodes[edge_to]
-            except KeyError as ke:
-                if edge_to in config["cluster-resources"]:
-                    info(resource, None, f"Referenced {edge_to} resource is provided"
-                            " by K8s clusters.")
-                    continue # skip this edge as the resource is provided by K8s clusters.
-                error(resource, None, f"{ke} resource not found")
-            '''
-
-def draw_edges():
-        
-    for resource_id, resource in resources.items():
-        if not get_node_config(resource).get("show", True):
-            continue # Skip this hidden resource.
-        edges = EdgesContext(resource_id, resource)
-
-        '''  
-        # execute config code to generate edges
-        code_to_exec = get_node_config(resource).get("edges")
-        if code_to_exec:
-            try:
-                # pylint: disable-next=exec-used
-                exec(code_to_exec)
-            except Exception as exc:
-                print("Error:", type(exc), ":", exc.args)
-                traceback.print_exc()
-                print("Edges script:\n", code_to_exec)
-                print("Resource:")
-                pprint(resource)
-                raise '''
-
-        for eidx, edge in enumerate(edges):
-            if len(edge) == 2:
-                edges[eidx] = [resource_id, edge[0], edge[1]]
-
-        for edge in edges:
-            edge_from = edge[0]
-            edge_to = edge[1]
-            edge_name = edge[2]
-
-
-            try:
-                if isinstance(edge_name, dict):
-                    edge_configuration = edge_name
-                else:
-                    edge_configuration = get_edge_config(edge_name)
-                if edge_configuration.get("direction") == "up":
-                    _ = diagram_nodes[edge_to] \
-                        << Edge(**edge_configuration) \
-                        << diagram_nodes[edge_from]
-                else:
-                    _ = diagram_nodes[edge_from] \
-                        >> Edge(**edge_configuration) \
-                        >> diagram_nodes[edge_to]
-            except KeyError as ke:
-                if edge_to in config["cluster-resources"]:
-                    info(resource, None, f"Referenced {edge_to} resource is provided"
-                            " by K8s clusters.")
-                    continue # skip this edge as the resource is provided by K8s clusters.
-                error(resource, None, f"{ke} resource not found")
 
 # CHANGE
 
@@ -1386,26 +1309,33 @@ def create_custom_clusters_nodes(container_id, container_def):
     if container_id == generate_diagram_in_cluster:
         create_nodes(resource_cluster)
 
+# Before generating diagram 
+print("---")
+print("Clusters before label intersection:")
+print("---")
+resource_cluster.display()
+
+collect_edges()
+build_parent_nodes()  # Optional if needed
+
+# Update clusters based on label intersections
+label_intersection(resource_cluster, parent_nodes)
+
 # Generate diagram
 generate_diagram_in_cluster = query_path(config, "diagram.generate_diagram_in_cluster")
 with Diagram("", filename=args.output, show=False, direction="TB", outformat=args.format):
 
+    ''' 
     print("---")
     print("Clusters before label intersection:")
     print("---")
     resource_cluster.display()
-
+    '''
     # Generate diagram nodes
     diagram_nodes = {}
     create_custom_clusters_nodes(None, query_path(config, "diagram", {}))
-
-    # Generate diagram edges
-    process_edges()
-
-    # Update clusters based on label intersections
-    #resource_cluster = label_intersection_all2(resource_cluster, parent_nodes, copy.deepcopy(config.get("clusters", [])))
-    label_intersection(resource_cluster, parent_nodes)
-
+    
+    # Draw resources, edges, and clusters
     for r in resources.values():
         draw_ressource(r)
     
