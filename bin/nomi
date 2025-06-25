@@ -1056,6 +1056,7 @@ if args.verbose:
     resource_cluster.display()
 
 parent_nodes = {}
+child_nodes = {}
 
 # CHANGE : PROCESS EDGES
 
@@ -1129,11 +1130,17 @@ def build_parent_nodes():
         for edge in edges:
             edge_from = edge[0]
             edge_to = edge[1]
+            # collect parent nodes for a resource
             if edge_to in parent_nodes:
                 parent_nodes[edge_to].append(edge_from)
             else:
                 parent_nodes[edge_to] = [edge_from]
 
+            # collect child nodes for a resource
+            if edge_from in child_nodes:
+                child_nodes[edge_from].append(edge_to)
+            else:
+                child_nodes[edge_from] = [edge_to]
 # CHANGE
 
 def find_cluster_by_labels(cluster, inter, label_to_title):
