@@ -223,6 +223,17 @@ class ResourceCluster:
             print("  " * ident, f"- {cid}")
             sub_cluster.display(ident + 1)
 
+    def get_cluster_by_part_of_name(self, part_of_name):
+        """
+            Get a cluster by part of its name.
+        """
+        # cluster_name = f"{cluster_config_title}: {metadata_label_value}"
+        for cluster in self.clusters.values():
+            cluster_title = cluster.name.split(": ")[0]
+            if part_of_name == cluster_title:
+                return cluster
+        return None
+
 class EdgesContext(list):
     """
         Context provided to edges configuration scripts.
@@ -1041,7 +1052,7 @@ def warning_cluster(cluster):
 
     
                 
-warning_cluster(resource_cluster)            
+#warning_cluster(resource_cluster)            
 
 # Print loaded Kubernetes resources
 if args.verbose:
@@ -1232,16 +1243,16 @@ def label_intersection(cluster, dict_to_use):
     '''
 
     for resource_id, resource in list(cluster.resources.items()):  
-        print("---")
-        print("Processing resource:", resource_id)
+        #print("---")
+        #print("Processing resource:", resource_id)
 
-        print("Parent nodes:", dict_to_use.get(resource_id, []))
+        #print("Parent nodes:", dict_to_use.get(resource_id, []))
         # Check if the resource has parent nodes
         if resource_id not in dict_to_use:
             continue
 
         common_labels = get_parent_label_intersection(resource_id, dict_to_use, resources)
-        print(f"Resource ID: {resource_id}, Common Labels: {common_labels}")
+        #print(f"Resource ID: {resource_id}, Common Labels: {common_labels}")
         
         if not common_labels:
             continue
@@ -1253,8 +1264,8 @@ def label_intersection(cluster, dict_to_use):
         if not moved:
             continue # Skip this resource if it was not moved
 
-        print("---")
-        print(loop_count, "Resource ID:", resource_id)
+        #print("---")
+        #print(loop_count, "Resource ID:", resource_id)
         loop_count += 1
 
     for subcluster in cluster.clusters.values():
@@ -1265,52 +1276,45 @@ def label_intersection(cluster, dict_to_use):
 # ALGO 4
 
 def assign_labels_to_no_labels_resources(cluster):
-
+    # Move resources at the root level (not in any cluster)
     for resource_id, resource in list(cluster.resources.items()):
-
-        move_resource_to_intersection_cluster(
-            resource, resource_id, {}, cluster, resource_cluster)
-
-    for sub_cluster in cluster.clusters.values():
-        if sub_cluster.name.startswith("Namespace:"):
-            
-            break
-
-
-def find_compatible_cluster(cluster):
-
-    for sub_cluster in cluster.clusters.values():
-
-        if sub_cluster.name.startswith("Namespace:"):
-
-            find_compatible_cluster(sub_cluster)
+        compatible_cluster = find_unique_nested_cluster(
+            cluster, ["K8s Instance", "Helm Chart", "K8s Component"])
         
-        else :
+        print("Compatible cluster (no namespace):", compatible_cluster.name)
+        del cluster.resources[resource_id]
+        compatible_cluster.resources[resource_id] = resource
 
-            if check_by_cluster_name(sub_cluster, "K8s Instance"):
-                sub_cluster = sub_cluster.clusters[0]
-                if check_by_cluster_name (sub_cluster, "Helm Chart"):
-                    sub_cluster = sub_cluster.clusters[0]
-                    if check_by_cluster_name(sub_cluster, "K8s Namespace"):
-                        sub_cluster = sub_cluster.clusters[0]
-                        if check_by_cluster_name(sub_cluster, "K8s Component"):
-                            return sub_cluster
-                    else:
-                        return sub_cluster
-                else:
-                    return sub_cluster
-            else:
-                return None
+    # Move resources that are directly in a Namespace cluster 
+    for sub_cluster in cluster.clusters.values():
+        if sub_cluster.name.startswith("Namespace:"):
 
-    return None
+            for resource_id, resource in list(sub_cluster.resources.items()):
+                compatible_cluster = find_unique_nested_cluster(
+                    sub_cluster, ["K8s Instance", "Helm Chart", "K8s Component"])
+                
+                print(f"Compatible cluster (namespace):", compatible_cluster.name)
+                del sub_cluster.resources[resource_id]
+                compatible_cluster.resources[resource_id] = resource
 
 
-def check_by_cluster_name(sub_cluster, cluster_name):
+def find_unique_nested_cluster(cluster, cluster_names):
+    """
+    Recursively find the first cluster that matches the sequence of cluster_names.
+    """
+    if not cluster_names:
+        return cluster
 
-    if sub_cluster.name.startswith(cluster_name) and sub_cluster.clusters__len__() == 1:
-        return True
-    
-    return False
+    non_namespace_clusters = [
+        sc for sc in cluster.clusters.values()
+        if not sc.name.startswith("Namespace:")
+    ]
+    matches = [sc for sc in non_namespace_clusters if sc.name.startswith(cluster_names[0])]
+
+    if len(matches) == 1:
+        return find_unique_nested_cluster(matches[0], cluster_names[1:])
+    else:
+        return cluster
 
 # END OF ALGO 4
 
@@ -1376,6 +1380,9 @@ build_parent_nodes()  # Optional if needed
 label_intersection(resource_cluster, parent_nodes)
 
 label_intersection(resource_cluster, child_nodes)
+
+# Assign labels to resources without labels
+assign_labels_to_no_labels_resources(resource_cluster)
 
 # Generate diagram
 generate_diagram_in_cluster = query_path(config, "diagram.generate_diagram_in_cluster")

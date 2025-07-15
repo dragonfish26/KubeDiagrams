@@ -1,0 +1,2273 @@
+---
+# Source: monolithic-ran/charts/oai-amf/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-amf
+  labels:
+    helm.sh/chart: oai-amf-v2.1.0
+    app.kubernetes.io/name: oai-amf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-ausf/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-ausf
+  labels:
+    helm.sh/chart: oai-ausf-v2.1.0
+    app.kubernetes.io/name: oai-ausf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-gnb/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-gnb-sa
+  labels:
+    helm.sh/chart: oai-gnb-2.1.0
+    app.kubernetes.io/name: oai-gnb
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-nr-ue/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-nr-ue-sa
+  labels:
+    helm.sh/chart: oai-nr-ue-2.1.0
+    app.kubernetes.io/name: oai-nr-ue
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-nrf/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-nrf
+  labels:
+    helm.sh/chart: oai-nrf-v2.1.0
+    app.kubernetes.io/name: oai-nrf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-smf/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-smf
+  labels:
+    helm.sh/chart: oai-smf-v2.1.0
+    app.kubernetes.io/name: oai-smf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-traffic-server/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-traffic-server
+---
+# Source: monolithic-ran/charts/oai-udm/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-udm
+  labels:
+    helm.sh/chart: oai-udm-v2.1.0
+    app.kubernetes.io/name: oai-udm
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-udr/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-udr
+  labels:
+    helm.sh/chart: oai-udr-v2.1.0
+    app.kubernetes.io/name: oai-udr
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-upf/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oai-upf
+  labels:
+    helm.sh/chart: oai-upf-v2.1.0
+    app.kubernetes.io/name: oai-upf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/mysql/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oai-cn5g-mysql
+  namespace: default
+  labels:
+    app.kubernetes.io/name: oai-cn5g-mysql
+    chart: "mysql-9.0.1"
+    release: "oai-cn5g"
+    heritage: "Helm"
+type: Opaque
+data:
+  
+  mysql-root-password:  "bGludXg="
+  
+  
+  mysql-password:  "dGVzdA=="
+---
+# Source: monolithic-ran/charts/mysql/templates/initializationFiles-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oai-cn5g-mysql-initialization
+  labels:
+    app.kubernetes.io/name: oai-cn5g-mysql
+    chart: "mysql-9.0.1"
+    release: "oai-cn5g"
+  namespace: default
+data:
+  oai_db-basic.sql: "-- phpMyAdmin SQL Dump\n-- version 5.1.0\n-- https://www.phpmyadmin.net/\n--\n--
+    Host: 172.16.200.10:3306\n-- Generation Time: Mar 22, 2021 at 10:31 AM\n-- Server
+    version: 5.7.33\n-- PHP Version: 7.4.15\n\nSET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\nSTART
+    TRANSACTION;\nSET time_zone = \"+00:00\";\n\n\n/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT
+    */;\n/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;\n/*!40101
+    SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;\n/*!40101 SET NAMES utf8mb4
+    */;\n\n--\n-- Database: `oai_db`\n--\n\n-- --------------------------------------------------------\n\n--\n--
+    Table structure for table `AccessAndMobilitySubscriptionData`\n--\n\nCREATE TABLE
+    `AccessAndMobilitySubscriptionData` (\n  `ueid` varchar(15) NOT NULL,\n  `servingPlmnid`
+    varchar(15) NOT NULL,\n  `supportedFeatures` varchar(50) DEFAULT NULL,\n  `gpsis`
+    json DEFAULT NULL,\n  `internalGroupIds` json DEFAULT NULL,\n  `sharedVnGroupDataIds`
+    json DEFAULT NULL,\n  `subscribedUeAmbr` json DEFAULT NULL,\n  `nssai` json DEFAULT
+    NULL,\n  `ratRestrictions` json DEFAULT NULL,\n  `forbiddenAreas` json DEFAULT NULL,\n
+    \ `serviceAreaRestriction` json DEFAULT NULL,\n  `coreNetworkTypeRestrictions` json
+    DEFAULT NULL,\n  `rfspIndex` int(10) DEFAULT NULL,\n  `subsRegTimer` int(10) DEFAULT
+    NULL,\n  `ueUsageType` int(10) DEFAULT NULL,\n  `mpsPriority` tinyint(1) DEFAULT
+    NULL,\n  `mcsPriority` tinyint(1) DEFAULT NULL,\n  `activeTime` int(10) DEFAULT
+    NULL,\n  `sorInfo` json DEFAULT NULL,\n  `sorInfoExpectInd` tinyint(1) DEFAULT NULL,\n
+    \ `sorafRetrieval` tinyint(1) DEFAULT NULL,\n  `sorUpdateIndicatorList` json DEFAULT
+    NULL,\n  `upuInfo` json DEFAULT NULL,\n  `micoAllowed` tinyint(1) DEFAULT NULL,\n
+    \ `sharedAmDataIds` json DEFAULT NULL,\n  `odbPacketServices` json DEFAULT NULL,\n
+    \ `serviceGapTime` int(10) DEFAULT NULL,\n  `mdtUserConsent` json DEFAULT NULL,\n
+    \ `mdtConfiguration` json DEFAULT NULL,\n  `traceData` json DEFAULT NULL,\n  `cagData`
+    json DEFAULT NULL,\n  `stnSr` varchar(50) DEFAULT NULL,\n  `cMsisdn` varchar(50)
+    DEFAULT NULL,\n  `nbIoTUePriority` int(10) DEFAULT NULL,\n  `nssaiInclusionAllowed`
+    tinyint(1) DEFAULT NULL,\n  `rgWirelineCharacteristics` varchar(50) DEFAULT NULL,\n
+    \ `ecRestrictionDataWb` json DEFAULT NULL,\n  `ecRestrictionDataNb` tinyint(1) DEFAULT
+    NULL,\n  `expectedUeBehaviourList` json DEFAULT NULL,\n  `primaryRatRestrictions`
+    json DEFAULT NULL,\n  `secondaryRatRestrictions` json DEFAULT NULL,\n  `edrxParametersList`
+    json DEFAULT NULL,\n  `ptwParametersList` json DEFAULT NULL,\n  `iabOperationAllowed`
+    tinyint(1) DEFAULT NULL,\n  `wirelineForbiddenAreas` json DEFAULT NULL,\n  `wirelineServiceAreaRestriction`
+    json DEFAULT NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;\n\n-- --------------------------------------------------------\n\n--\n--
+    Table structure for table `Amf3GppAccessRegistration`\n--\n\nCREATE TABLE `Amf3GppAccessRegistration`
+    (\n  `ueid` varchar(15) NOT NULL,\n  `amfInstanceId` varchar(50) NOT NULL,\n  `supportedFeatures`
+    varchar(50) DEFAULT NULL,\n  `purgeFlag` tinyint(1) DEFAULT NULL,\n  `pei` varchar(50)
+    DEFAULT NULL,\n  `imsVoPs` json DEFAULT NULL,\n  `deregCallbackUri` varchar(50)
+    NOT NULL,\n  `amfServiceNameDereg` json DEFAULT NULL,\n  `pcscfRestorationCallbackUri`
+    varchar(50) DEFAULT NULL,\n  `amfServiceNamePcscfRest` json DEFAULT NULL,\n  `initialRegistrationInd`
+    tinyint(1) DEFAULT NULL,\n  `guami` json NOT NULL,\n  `backupAmfInfo` json DEFAULT
+    NULL,\n  `drFlag` tinyint(1) DEFAULT NULL,\n  `ratType` json NOT NULL,\n  `urrpIndicator`
+    tinyint(1) DEFAULT NULL,\n  `amfEeSubscriptionId` varchar(50) DEFAULT NULL,\n  `epsInterworkingInfo`
+    json DEFAULT NULL,\n  `ueSrvccCapability` tinyint(1) DEFAULT NULL,\n  `registrationTime`
+    varchar(50) DEFAULT NULL,\n  `vgmlcAddress` json DEFAULT NULL,\n  `contextInfo`
+    json DEFAULT NULL,\n  `noEeSubscriptionInd` tinyint(1) DEFAULT NULL\n) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8;\n\n-- --------------------------------------------------------\n\n--\n--
+    Table structure for table `AuthenticationStatus`\n--\n\nCREATE TABLE `AuthenticationStatus`
+    (\n  `ueid` varchar(20) NOT NULL,\n  `nfInstanceId` varchar(50) NOT NULL,\n  `success`
+    tinyint(1) NOT NULL,\n  `timeStamp` varchar(50) NOT NULL,\n  `authType` varchar(25)
+    NOT NULL,\n  `servingNetworkName` varchar(50) NOT NULL,\n  `authRemovalInd` tinyint(1)
+    DEFAULT NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;\n\n-- --------------------------------------------------------\n\n--\n--
+    Table structure for table `AuthenticationSubscription`\n--\n\nCREATE TABLE `AuthenticationSubscription`
+    (\n  `ueid` varchar(20) NOT NULL,\n  `authenticationMethod` varchar(25) NOT NULL,\n
+    \ `encPermanentKey` varchar(50) DEFAULT NULL,\n  `protectionParameterId` varchar(50)
+    DEFAULT NULL,\n  `sequenceNumber` json DEFAULT NULL,\n  `authenticationManagementField`
+    varchar(50) DEFAULT NULL,\n  `algorithmId` varchar(50) DEFAULT NULL,\n  `encOpcKey`
+    varchar(50) DEFAULT NULL,\n  `encTopcKey` varchar(50) DEFAULT NULL,\n  `vectorGenerationInHss`
+    tinyint(1) DEFAULT NULL,\n  `n5gcAuthMethod` varchar(15) DEFAULT NULL,\n  `rgAuthenticationInd`
+    tinyint(1) DEFAULT NULL,\n  `supi` varchar(20) DEFAULT NULL\n) ENGINE=InnoDB DEFAULT
+    CHARSET=utf8;\n\n--\n-- Dumping data for table `AuthenticationSubscription`\n--\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000100', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000100');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000101', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000101');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000102', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000102');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000103', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000103');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000104', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000104');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000105', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000105');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000106', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000106');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000107', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000107');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000108', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000108');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000109', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000109');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000110', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000110');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000111', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000111');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000112', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000112');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000113', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000113');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000114', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000114');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000115', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000115');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000116', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000116');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000117', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000117');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000118', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000118');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000119', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000119');\nINSERT
+    INTO `AuthenticationSubscription` (`ueid`, `authenticationMethod`, `encPermanentKey`,
+    `protectionParameterId`, `sequenceNumber`, `authenticationManagementField`, `algorithmId`,
+    `encOpcKey`, `encTopcKey`, `vectorGenerationInHss`, `n5gcAuthMethod`, `rgAuthenticationInd`,
+    `supi`) VALUES\n('001010000000120', '5G_AKA', 'fec86ba6eb707ed08905757b1bb44b8f',
+    'fec86ba6eb707ed08905757b1bb44b8f', '{\\\"sqn\\\": \\\"000000000020\\\", \\\"sqnScheme\\\":
+    \\\"NON_TIME_BASED\\\", \\\"lastIndexes\\\": {\\\"ausf\\\": 0}}', '8000', 'milenage',
+    'C42449363BBAD02B66D16BC975D77CC1', NULL, NULL, NULL, NULL, '001010000000120');\n\n--
+    --------------------------------------------------------\n\n--\n-- Table structure
+    for table `SdmSubscriptions`\n--\n\nCREATE TABLE `SdmSubscriptions` (\n  `ueid`
+    varchar(15) NOT NULL,\n  `subsId` int(10) UNSIGNED NOT NULL,\n  `nfInstanceId` varchar(50)
+    NOT NULL,\n  `implicitUnsubscribe` tinyint(1) DEFAULT NULL,\n  `expires` varchar(50)
+    DEFAULT NULL,\n  `callbackReference` varchar(50) NOT NULL,\n  `amfServiceName` json
+    DEFAULT NULL,\n  `monitoredResourceUris` json NOT NULL,\n  `singleNssai` json DEFAULT
+    NULL,\n  `dnn` varchar(50) DEFAULT NULL,\n  `subscriptionId` varchar(50) DEFAULT
+    NULL,\n  `plmnId` json DEFAULT NULL,\n  `immediateReport` tinyint(1) DEFAULT NULL,\n
+    \ `report` json DEFAULT NULL,\n  `supportedFeatures` varchar(50) DEFAULT NULL,\n
+    \ `contextInfo` json DEFAULT NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;\n\n-- --------------------------------------------------------\n\n--\n--
+    Table structure for table `SessionManagementSubscriptionData`\n--\n\nCREATE TABLE
+    `SessionManagementSubscriptionData` (\n  `ueid` varchar(15) NOT NULL,\n  `servingPlmnid`
+    varchar(15) NOT NULL,\n  `singleNssai` json NOT NULL,\n  `dnnConfigurations` json
+    DEFAULT NULL,\n  `internalGroupIds` json DEFAULT NULL,\n  `sharedVnGroupDataIds`
+    json DEFAULT NULL,\n  `sharedDnnConfigurationsId` varchar(50) DEFAULT NULL,\n  `odbPacketServices`
+    json DEFAULT NULL,\n  `traceData` json DEFAULT NULL,\n  `sharedTraceDataId` varchar(50)
+    DEFAULT NULL,\n  `expectedUeBehavioursList` json DEFAULT NULL,\n  `suggestedPacketNumDlList`
+    json DEFAULT NULL,\n  `3gppChargingCharacteristics` varchar(50) DEFAULT NULL\n)
+    ENGINE=InnoDB DEFAULT CHARSET=utf8;\n\n-- --------------------------------------------------------\n\n--\n--
+    Table structure for table `SmfRegistrations`\n--\n\nCREATE TABLE `SmfRegistrations`
+    (\n  `ueid` varchar(15) NOT NULL,\n  `subpduSessionId` int(10) NOT NULL,\n  `smfInstanceId`
+    varchar(50) NOT NULL,\n  `smfSetId` varchar(50) DEFAULT NULL,\n  `supportedFeatures`
+    varchar(50) DEFAULT NULL,\n  `pduSessionId` int(10) NOT NULL,\n  `singleNssai` json
+    NOT NULL,\n  `dnn` varchar(50) DEFAULT NULL,\n  `emergencyServices` tinyint(1) DEFAULT
+    NULL,\n  `pcscfRestorationCallbackUri` varchar(50) DEFAULT NULL,\n  `plmnId` json
+    NOT NULL,\n  `pgwFqdn` varchar(50) DEFAULT NULL,\n  `epdgInd` tinyint(1) DEFAULT
+    NULL,\n  `deregCallbackUri` varchar(50) DEFAULT NULL,\n  `registrationReason` json
+    DEFAULT NULL,\n  `registrationTime` varchar(50) DEFAULT NULL,\n  `contextInfo` json
+    DEFAULT NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;\n\n-- --------------------------------------------------------\n\n--\n--
+    Table structure for table `SmfSelectionSubscriptionData`\n--\n\nCREATE TABLE `SmfSelectionSubscriptionData`
+    (\n  `ueid` varchar(15) NOT NULL,\n  `servingPlmnid` varchar(15) NOT NULL,\n  `supportedFeatures`
+    varchar(50) DEFAULT NULL,\n  `subscribedSnssaiInfos` json DEFAULT NULL,\n  `sharedSnssaiInfosId`
+    varchar(50) DEFAULT NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;\n\n--\n-- Indexes
+    for dumped tables\n--\n\n--\n-- Indexes for table `AccessAndMobilitySubscriptionData`\n--\nALTER
+    TABLE `AccessAndMobilitySubscriptionData`\n  ADD PRIMARY KEY (`ueid`,`servingPlmnid`)
+    USING BTREE;\n\n--\n-- Indexes for table `Amf3GppAccessRegistration`\n--\nALTER
+    TABLE `Amf3GppAccessRegistration`\n  ADD PRIMARY KEY (`ueid`);\n\n--\n-- Indexes
+    for table `AuthenticationStatus`\n--\nALTER TABLE `AuthenticationStatus`\n  ADD
+    PRIMARY KEY (`ueid`);\n\n--\n-- Indexes for table `AuthenticationSubscription`\n--\nALTER
+    TABLE `AuthenticationSubscription`\n  ADD PRIMARY KEY (`ueid`);\n\n--\n-- Indexes
+    for table `SdmSubscriptions`\n--\nALTER TABLE `SdmSubscriptions`\n  ADD PRIMARY
+    KEY (`subsId`,`ueid`) USING BTREE;\n\n--\n-- Indexes for table `SessionManagementSubscriptionData`\n--\nALTER
+    TABLE `SessionManagementSubscriptionData`\n  ADD PRIMARY KEY (`ueid`,`servingPlmnid`)
+    USING BTREE;\n\n--\n-- Indexes for table `SmfRegistrations`\n--\nALTER TABLE `SmfRegistrations`\n
+    \ ADD PRIMARY KEY (`ueid`,`subpduSessionId`) USING BTREE;\n\n--\n-- Indexes for
+    table `SmfSelectionSubscriptionData`\n--\nALTER TABLE `SmfSelectionSubscriptionData`\n
+    \ ADD PRIMARY KEY (`ueid`,`servingPlmnid`) USING BTREE;\n\n--\n-- AUTO_INCREMENT
+    for dumped tables\n--\nINSERT INTO `SessionManagementSubscriptionData` (`ueid`,
+    `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES\n('001010000000100',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 1,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"},\\\"staticIpAddress\\\":[{\\\"ipv4Addr\\\": \\\"12.1.1.100\\\"}]},\\\"ims\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4V6\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 2,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES\n('001010000000101',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 1,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"},\\\"staticIpAddress\\\":[{\\\"ipv4Addr\\\": \\\"12.1.1.101\\\"}]},\\\"ims\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4V6\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 2,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES\n('001010000000102',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 1,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"},\\\"staticIpAddress\\\":[{\\\"ipv4Addr\\\": \\\"12.1.1.102\\\"}]},\\\"ims\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4V6\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 2,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES\n('001010000000103',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 1,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"},\\\"staticIpAddress\\\":[{\\\"ipv4Addr\\\": \\\"12.1.1.103\\\"}]},\\\"ims\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4V6\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 2,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES\n('001010000000104',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 1,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"},\\\"staticIpAddress\\\":[{\\\"ipv4Addr\\\": \\\"12.1.1.104\\\"}]},\\\"ims\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4V6\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 2,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES\n('001010000000105',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 1,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"},\\\"staticIpAddress\\\":[{\\\"ipv4Addr\\\": \\\"12.1.1.105\\\"}]},\\\"ims\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4V6\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 2,\\\"arp\\\":{\\\"priorityLevel\\\":
+    15,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\n\n-- Dynamic IPADDRESS Allocation\n\nINSERT
+    INTO `SessionManagementSubscriptionData` (`ueid`, `servingPlmnid`, `singleNssai`,
+    `dnnConfigurations`) VALUES \n('001010000000106', '00101', '{\\\"sst\\\": 1, \\\"sd\\\":
+    \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{ \\\"defaultSessionType\\\":
+    \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\": \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\":
+    {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\": 1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000107',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000109',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000110',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000111',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000112',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000113',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000114',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000115',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000116',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000117',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000118',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000119',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\nINSERT INTO `SessionManagementSubscriptionData`
+    (`ueid`, `servingPlmnid`, `singleNssai`, `dnnConfigurations`) VALUES \n('001010000000120',
+    '00101', '{\\\"sst\\\": 1, \\\"sd\\\": \\\"FFFFFF\\\"}','{\\\"oai\\\":{\\\"pduSessionTypes\\\":{
+    \\\"defaultSessionType\\\": \\\"IPV4\\\"},\\\"sscModes\\\": {\\\"defaultSscMode\\\":
+    \\\"SSC_MODE_1\\\"},\\\"5gQosProfile\\\": {\\\"5qi\\\": 6,\\\"arp\\\":{\\\"priorityLevel\\\":
+    1,\\\"preemptCap\\\": \\\"NOT_PREEMPT\\\",\\\"preemptVuln\\\":\\\"NOT_PREEMPTABLE\\\"},\\\"priorityLevel\\\":1},\\\"sessionAmbr\\\":{\\\"uplink\\\":\\\"1000Mbps\\\",
+    \\\"downlink\\\":\\\"1000Mbps\\\"}}}');\n\n--\n-- AUTO_INCREMENT for table `SdmSubscriptions`\n--\nALTER
+    TABLE `SdmSubscriptions`\n  MODIFY `subsId` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    AUTO_INCREMENT=3;\nCOMMIT;\n\n/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT
+    */;\n/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;\n/*!40101
+    SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;\n\n"
+---
+# Source: monolithic-ran/charts/oai-gnb/templates/configmap.yaml
+#https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/ci-scripts/conf_files/gnb.sa.band78.106prb.rfsim.conf
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oai-gnb-configmap
+  labels:
+    helm.sh/chart: oai-gnb-2.1.0
+    app.kubernetes.io/name: oai-gnb
+    app.kubernetes.io/instance: oai-cn5g
+data:
+  gnb.conf: |
+    Active_gNBs = ( "oai-gnb-rfsim");
+    # Asn1_verbosity, choice in: none, info, annoying
+    Asn1_verbosity = "none";
+    gNBs =
+    (
+      {
+        ////////// Identification parameters:
+        gNB_ID    =  0xe00;
+        gNB_name  =  "oai-gnb-rfsim";
+        // Tracking area code, 0x0000 and 0xfffe are reserved values
+        tracking_area_code  = 1 ;
+          plmn_list = ({ mcc = 001; mnc = 01; mnc_length = 2; snssaiList = ({ sst = 1 }) });
+
+        nr_cellid = 12345678L
+
+    #     tr_s_preference     = "local_mac"
+
+        ////////// Physical parameters:
+
+        min_rxtxtime = 6;
+
+          servingCellConfigCommon = (
+          {
+       #spCellConfigCommon
+
+            physCellId                                                    = 0;
+
+      #  downlinkConfigCommon
+          #frequencyInfoDL
+            # this is 3600 MHz + 43 PRBs@30kHz SCS (same as initial BWP)
+            absoluteFrequencySSB                                          = 641280;
+            dl_frequencyBand                                                 = 78;
+            # this is 3600 MHz
+            dl_absoluteFrequencyPointA                                       = 640008;
+            #scs-SpecificCarrierList
+              dl_offstToCarrier                                              = 0;
+      # subcarrierSpacing
+      # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
+              dl_subcarrierSpacing                                           = 1;
+              dl_carrierBandwidth                                            = 106;
+           #initialDownlinkBWP
+            #genericParameters
+              # this is RBstart=27,L=48 (275*(L-1))+RBstart
+              initialDLBWPlocationAndBandwidth                               = 28875; # 6366 12925 12956 28875 12952
+      # subcarrierSpacing
+      # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
+              initialDLBWPsubcarrierSpacing                                           = 1;
+            #pdcch-ConfigCommon
+              initialDLBWPcontrolResourceSetZero                              = 12;
+              initialDLBWPsearchSpaceZero                                             = 0;
+
+        #uplinkConfigCommon 
+           #frequencyInfoUL
+            ul_frequencyBand                                                 = 78;
+            #scs-SpecificCarrierList
+            ul_offstToCarrier                                              = 0;
+      # subcarrierSpacing
+      # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
+            ul_subcarrierSpacing                                           = 1;
+            ul_carrierBandwidth                                            = 106;
+            pMax                                                          = 20;
+           #initialUplinkBWP
+            #genericParameters
+              initialULBWPlocationAndBandwidth                            = 28875;
+      # subcarrierSpacing
+      # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
+              initialULBWPsubcarrierSpacing                                           = 1;
+            #rach-ConfigCommon
+              #rach-ConfigGeneric
+                prach_ConfigurationIndex                                  = 98;
+      #prach_msg1_FDM
+      #0 = one, 1=two, 2=four, 3=eight
+                prach_msg1_FDM                                            = 0;
+                prach_msg1_FrequencyStart                                 = 0;
+                zeroCorrelationZoneConfig                                 = 13;
+                preambleReceivedTargetPower                               = -96;
+      #preamblTransMax (0...10) = (3,4,5,6,7,8,10,20,50,100,200)
+                preambleTransMax                                          = 6;
+      #powerRampingStep
+      # 0=dB0,1=dB2,2=dB4,3=dB6
+              powerRampingStep                                            = 1;
+      #ra_ReponseWindow
+      #1,2,4,8,10,20,40,80
+              ra_ResponseWindow                                           = 4;
+      #ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR
+      #1=oneeighth,2=onefourth,3=half,4=one,5=two,6=four,7=eight,8=sixteen
+              ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR                = 4;
+      #oneHalf (0..15) 4,8,12,16,...60,64
+              ssb_perRACH_OccasionAndCB_PreamblesPerSSB                   = 14;
+      #ra_ContentionResolutionTimer
+      #(0..7) 8,16,24,32,40,48,56,64
+              ra_ContentionResolutionTimer                                = 7;
+              rsrp_ThresholdSSB                                           = 19;
+      #prach-RootSequenceIndex_PR
+      #1 = 839, 2 = 139
+              prach_RootSequenceIndex_PR                                  = 2;
+              prach_RootSequenceIndex                                     = 1;
+              # SCS for msg1, can only be 15 for 30 kHz < 6 GHz, takes precendence over the one derived from prach-ConfigIndex
+              #  
+              msg1_SubcarrierSpacing                                      = 1,
+      # restrictedSetConfig
+      # 0=unrestricted, 1=restricted type A, 2=restricted type B
+              restrictedSetConfig                                         = 0,
+
+              msg3_DeltaPreamble                                          = 1;
+              p0_NominalWithGrant                                         =-90;
+
+      # pucch-ConfigCommon setup :
+      # pucchGroupHopping
+      # 0 = neither, 1= group hopping, 2=sequence hopping
+              pucchGroupHopping                                           = 0;
+              hoppingId                                                   = 40;
+              p0_nominal                                                  = -90;
+      # ssb_PositionsInBurs_BitmapPR
+      # 1=short, 2=medium, 3=long
+            ssb_PositionsInBurst_PR                                       = 2;
+            ssb_PositionsInBurst_Bitmap                                   = 1;
+
+      # ssb_periodicityServingCell
+      # 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1 
+            ssb_periodicityServingCell                                    = 2;
+
+      # dmrs_TypeA_position
+      # 0 = pos2, 1 = pos3
+            dmrs_TypeA_Position                                           = 0;
+
+      # subcarrierSpacing
+      # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
+            subcarrierSpacing                                             = 1;
+
+
+        #tdd-UL-DL-ConfigurationCommon
+      # subcarrierSpacing
+      # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
+            referenceSubcarrierSpacing                                    = 1;
+            # pattern1 
+            # dl_UL_TransmissionPeriodicity
+            # 0=ms0p5, 1=ms0p625, 2=ms1, 3=ms1p25, 4=ms2, 5=ms2p5, 6=ms5, 7=ms10
+            dl_UL_TransmissionPeriodicity                                 = 6;
+            nrofDownlinkSlots                                             = 7;
+            nrofDownlinkSymbols                                           = 6;
+            nrofUplinkSlots                                               = 2;
+            nrofUplinkSymbols                                             = 4;
+
+            ssPBCH_BlockPower                                             = -25;
+           }
+
+        );
+
+        # ------- SCTP definitions
+        SCTP :
+        {
+            # Number of streams to use in input/output
+            SCTP_INSTREAMS  = 2;
+            SCTP_OUTSTREAMS = 2;
+        };
+
+        ////////// AMF parameters:
+        amf_ip_address      = ( { ipv4       = "@AMF_IP_ADDRESS@";});
+
+
+        NETWORK_INTERFACES :
+        {
+          GNB_IPV4_ADDRESS_FOR_NG_AMF              = "@N2_IP_ADDRESS@";
+          GNB_IPV4_ADDRESS_FOR_NGU                 = "@N3_IP_ADDRESS@";
+          GNB_PORT_FOR_S1U                         = 2152; # Spec 2152
+        };
+      }
+    );
+
+    MACRLCs = (
+      {
+        num_cc           = 1;
+        tr_s_preference  = "local_L1";
+        tr_n_preference  = "local_RRC";
+        pusch_TargetSNRx10 = 200;
+        pucch_TargetSNRx10 = 200;
+      }
+    );
+
+    L1s = (
+    {
+      num_cc = 1;
+      tr_n_preference = "local_mac";
+      prach_dtx_threshold = 200;
+    #  pucch0_dtx_threshold = 150;
+    }
+    );
+
+    RUs = (
+        {
+           local_rf       = "yes"
+             nb_tx          = 1
+             nb_rx          = 1
+             att_tx         = 0
+             att_rx         = 0;
+             bands          = [78];
+             max_pdschReferenceSignalPower = -27;
+             max_rxgain                    = 75;
+             eNB_instances  = [0];
+             ##beamforming 1x2 matrix: 1 layer x 2 antennas
+             bf_weights = [0x00007fff, 0x0000];
+             ##beamforming 1x4 matrix: 1 layer x 4 antennas
+             #bf_weights = [0x00007fff, 0x0000,0x0000, 0x0000];
+             ## beamforming 2x2 matrix:
+             # bf_weights = [0x00007fff, 0x00000000, 0x00000000, 0x00007fff];
+             ## beamforming 4x4 matrix:
+             #bf_weights = [0x00007fff, 0x0000, 0x0000, 0x0000, 0x00000000, 0x00007fff, 0x0000, 0x0000, 0x0000, 0x0000, 0x00007fff, 0x0000, 0x0000, 0x0000, 0x0000, 0x00007fff];
+             sf_extension = 0
+             sdr_addrs = "serial=XXXXXXX"
+        }
+    );
+
+    THREAD_STRUCT = (
+      {
+        #three config for level of parallelism "PARALLEL_SINGLE_THREAD", "PARALLEL_RU_L1_SPLIT", or "PARALLEL_RU_L1_TRX_SPLIT"
+        parallel_config    = "PARALLEL_SINGLE_THREAD";
+        #two option for worker "WORKER_DISABLE" or "WORKER_ENABLE"
+        worker_config      = "WORKER_ENABLE";
+      }
+    );
+
+    rfsimulator: {
+        serveraddr = "server";
+    };
+
+    security = {
+      # preferred ciphering algorithms
+      # the first one of the list that an UE supports in chosen
+      # valid values: nea0, nea1, nea2, nea3
+      ciphering_algorithms = ( "nea0" );
+
+      # preferred integrity algorithms
+      # the first one of the list that an UE supports in chosen
+      # valid values: nia0, nia1, nia2, nia3
+      integrity_algorithms = ( "nia2", "nia0" );
+
+      # setting 'drb_ciphering' to "no" disables ciphering for DRBs, no matter
+      # what 'ciphering_algorithms' configures; same thing for 'drb_integrity'
+      drb_ciphering = "yes";
+      drb_integrity = "no";
+    };
+
+    log_config :
+      {
+        global_log_level                      ="info";
+        hw_log_level                          ="info";
+        phy_log_level                         ="info";
+        mac_log_level                         ="info";
+        rlc_log_level                         ="info";
+        pdcp_log_level                        ="info";
+        rrc_log_level                         ="info";
+        f1ap_log_level                         ="debug";
+      };
+---
+# Source: monolithic-ran/charts/oai-nr-ue/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oai-nr-ue-configmap
+  labels:
+    helm.sh/chart: oai-nr-ue-2.1.0
+    app.kubernetes.io/name: oai-nr-ue
+    app.kubernetes.io/instance: oai-cn5g
+data:
+  nr-ue.conf:
+      uicc0 = {
+      imsi = "001010000000100";
+      key = "fec86ba6eb707ed08905757b1bb44b8f";
+      opc= "C42449363BBAD02B66D16BC975D77CC1";
+      dnn= "oai";
+      nssai_sst="1";
+      nssai_sd="16777215";
+      }
+---
+# Source: monolithic-ran/charts/oai-traffic-server/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iperf-pod
+data:
+  script.sh: |
+    #!/bin/bash
+    ip route add 12.1.1.0/24 via $(getent ahostsv4 oai-upf | awk 'NR==1{print $1}') dev eth0
+    num_servers=2
+    base_port=5200
+    # Run iperf multiple times
+    for i in `seq 1 $num_servers`; do
+
+      # Set server port
+      server_port=$(($base_port+$i));
+
+      # Report file includes server port
+      report_file=iperf3-${server_port}.txt
+
+      # Run iperf
+      iperf3 -s --daemon -p $server_port
+    done
+    /bin/bash -c 'trap : TERM INT; sleep infinity & wait'
+---
+# Source: monolithic-ran/templates/core-cm.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: core
+  labels:
+    app.kubernetes.io/instance: oai-cn5g
+data:
+  config.yaml: |
+    ############# Common configuration
+  
+    # Log level for all the NFs
+    log_level:
+      general: info
+  
+    # If you enable registration, the other NFs will use the NRF discovery mechanism
+    register_nf:
+      general: yes
+  
+    http_version: 2
+    curl_timeout: 6000 #milliseconds can be changed if the network have issues
+  
+    ## general single_nssai configuration
+    ## Defines YAML anchors, which are reused in the config file
+    snssais:
+      - &embb_slice1
+        sst: 1
+      - &embb_slice2
+        sst: 1
+        sd: 000001 # in hex
+  
+    ############## SBI Interfaces
+    ### Each NF takes its local SBI interfaces and remote interfaces from here, unless it gets them using NRF discovery mechanisms
+    nfs:
+      amf:
+        host: oai-amf
+        sbi:
+          port: 80
+          api_version: v1
+          interface_name: eth0
+        n2:
+          interface_name: eth0
+          port: 38412
+      smf:
+        host: oai-smf
+        sbi:
+          port: 80
+          api_version: v1
+          interface_name: eth0
+        n4:
+          interface_name: eth0
+          port: 8805
+      upf:
+        host: oai-upf
+        sbi:
+          port: 80
+          api_version: v1
+          interface_name: eth0
+        n3:
+          interface_name: eth0
+          port: 2152
+        n4:
+          interface_name: eth0
+          port: 8805
+        n6:
+          interface_name: eth0
+        n9:
+          interface_name: eth0
+          port: 2152
+      udm:
+        host: oai-udm
+        sbi:
+          port: 80
+          api_version: v1
+          interface_name: eth0
+      udr:
+        host: oai-udr
+        sbi:
+          port: 80
+          api_version: v1
+          interface_name: eth0
+      ausf:
+        host: oai-ausf
+        sbi:
+          port: 80
+          api_version: v1
+          interface_name: eth0
+      nrf:
+        host: oai-nrf
+        sbi:
+          port: 80
+          api_version: v1
+          interface_name: eth0
+  
+    #### Common for UDR and AMF
+    database:
+      host: mysql
+      user: test
+      type: mysql
+      password: test
+      database_name: oai_db
+      generate_random: true
+      connection_timeout: 300 # seconds
+  
+    ############## NF-specific configuration
+    amf:
+      amf_name: "OAI-AMF"
+      # This really depends on if we want to keep the "mini" version or not
+      support_features_options:
+        enable_simple_scenario: no # "no" by default with the normal deployment scenarios with AMF/SMF/UPF/AUSF/UDM/UDR/NRF.
+                                   # set it to "yes" to use with the minimalist deployment scenario (including only AMF/SMF/UPF) by using the internal AUSF/UDM implemented inside AMF.
+                                   # There's no NRF in this scenario, SMF info is taken from "nfs" section.
+        enable_nssf: no
+        enable_smf_selection: yes
+      relative_capacity: 30
+      statistics_timer_interval: 20  # in seconds
+      emergency_support: false
+      served_guami_list:
+        - mcc: 001
+          mnc: 01
+          amf_region_id: 01
+          amf_set_id: 001
+          amf_pointer: 01
+      plmn_support_list:
+        - mcc: 001
+          mnc: 01
+          tac: 0x0001
+          nssai:
+            - *embb_slice1
+            - *embb_slice2
+      supported_integrity_algorithms:
+        - "NIA1"
+        - "NIA2"
+      supported_encryption_algorithms:
+        - "NEA0"
+        - "NEA1"
+        - "NEA2"
+  
+    smf:
+      ue_mtu: 1500
+      support_features:
+        use_local_subscription_info: no # Use infos from local_subscription_info or from UDM
+        use_local_pcc_rules: yes # Use infos from local_pcc_rules or from PCF
+      # we resolve from NRF, this is just to configure usage_reporting
+      upfs:
+        - host: oai-upf
+          config:
+            enable_usage_reporting: no
+      ue_dns:
+        primary_ipv4: "10.3.2.200"
+        primary_ipv6: "2001:4860:4860::8888"
+        secondary_ipv4: "8.8.8.8"
+        secondary_ipv6: "2001:4860:4860::8888"
+      ims:
+        pcscf_ipv4: "192.168.70.139"
+        pcscf_ipv6: "fe80::7915:f408:1787:db8b"
+      # the DNN you configure here should be configured in "dnns"
+      # follows the SmfInfo datatype from 3GPP TS 29.510
+      smf_info:
+        sNssaiSmfInfoList:
+          - sNssai: *embb_slice1
+            dnnSmfInfoList:
+              - dnn: "oai"
+          - sNssai: *embb_slice2
+            dnnSmfInfoList:
+              - dnn: "ims"
+      local_subscription_infos:
+        - single_nssai: *embb_slice1
+          dnn: "oai"
+          qos_profile:
+            5qi: 5
+            session_ambr_ul: "200Mbps"
+            session_ambr_dl: "400Mbps"
+        - single_nssai: *embb_slice2
+          dnn: "ims"
+          qos_profile:
+            5qi: 2
+            session_ambr_ul: "100Mbps"
+            session_ambr_dl: "200Mbps"
+  
+    upf:
+      support_features:
+        enable_bpf_datapath: no    # If "on": BPF is used as datapath else simpleswitch is used, DEFAULT= off
+        enable_snat: yes           # If "on": Source natting is done for UE, DEFAULT= off
+      remote_n6_gw: 127.0.0.1      # Dummy host since simple-switch does not use N6 GW
+      upf_info:
+        sNssaiUpfInfoList:
+        - sNssai: *embb_slice1
+          dnnUpfInfoList:
+            - dnn: oai
+        - sNssai: *embb_slice2
+          dnnUpfInfoList:
+            - dnn: ims
+  
+    ## DNN configuration
+    dnns:
+      - dnn: "oai"
+        pdu_session_type: "IPV4"
+        ipv4_subnet: "12.1.1.0/24"
+      - dnn: "ims"
+        pdu_session_type: "IPV4V6"
+        ipv4_subnet: "14.1.1.0/24"
+---
+# Source: monolithic-ran/charts/mysql/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: default
+  labels:
+    app.kubernetes.io/name: oai-cn5g-mysql
+    chart: "mysql-9.0.1"
+    release: "oai-cn5g"
+    heritage: "Helm"
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+  - name: mysql
+    port: 3306
+    targetPort: mysql
+  selector:
+    app.kubernetes.io/name: oai-cn5g-mysql
+---
+# Source: monolithic-ran/charts/oai-amf/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: oai-amf
+  labels:
+    helm.sh/chart: oai-amf-v2.1.0
+    app.kubernetes.io/name: oai-amf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: sctp
+      port: 38412
+      targetPort: 38412
+      protocol: SCTP
+  selector:
+    app.kubernetes.io/name: oai-amf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-ausf/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: oai-ausf
+  labels:
+    helm.sh/chart: oai-ausf-v2.1.0
+    app.kubernetes.io/name: oai-ausf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      # Port accessible outside cluster
+      port: 80
+      # Port to forward to inside the pod
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: oai-ausf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-gnb/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: oai-ran
+  labels:
+    helm.sh/chart: oai-gnb-2.1.0
+    app.kubernetes.io/name: oai-gnb
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "develop"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: n3
+      port: 2152
+      targetPort: 2152
+      protocol: UDP
+    - name: n2
+      port: 36412
+      targetPort: 36412
+      protocol: SCTP
+  selector:
+    app.kubernetes.io/name: oai-gnb
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-nrf/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: oai-nrf
+  labels:
+    helm.sh/chart: oai-nrf-v2.1.0
+    app.kubernetes.io/name: oai-nrf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      # Port accessible outside cluster
+      port: 80
+      # Port to forward config inside the pod
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: oai-nrf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-smf/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: oai-smf
+  labels:
+    helm.sh/chart: oai-smf-v2.1.0
+    app.kubernetes.io/name: oai-smf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: oai-smf
+    app.kubernetes.io/instance: oai-cn5g
+  ports:
+    - name: oai-smf
+      # Port accessible outside cluster
+      port: 8805
+      # Port to forward to inside the pod
+      targetPort: 8805
+      protocol: UDP
+    
+    - name: http
+      port: 80
+      # Port to forward to inside the pod
+      targetPort: 80
+      protocol: TCP
+---
+# Source: monolithic-ran/charts/oai-udm/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: oai-udm
+  labels:
+    helm.sh/chart: oai-udm-v2.1.0
+    app.kubernetes.io/name: oai-udm
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http1
+      # Port accessible outside cluster
+      port: 80
+      # Port to forward to inside the pod
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: oai-udm
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-udr/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: oai-udr
+  labels:
+    helm.sh/chart: oai-udr-v2.1.0
+    app.kubernetes.io/name: oai-udr
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      # Port accessible outside cluster
+      port: 80
+      # Port to forward to inside the pod
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: oai-udr
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/oai-upf/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: oai-upf
+  labels:
+    helm.sh/chart: oai-upf-v2.1.0
+    app.kubernetes.io/name: oai-upf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: pfcp
+      port: 8805
+      # Port to forward to inside the pod
+      targetPort: 8805
+      protocol: UDP
+    - name: gtp
+      port: 2152
+      # Port to forward to inside the pod
+      targetPort: 2152
+      protocol: UDP
+    - name: http
+      port: 80
+      # Port to forward to inside the pod
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: oai-upf
+    app.kubernetes.io/instance: oai-cn5g
+---
+# Source: monolithic-ran/charts/mysql/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-cn5g-mysql
+  namespace: default
+  labels:
+    app.kubernetes.io/name: oai-cn5g-mysql
+    chart: "mysql-9.0.1"
+    app.kubernetes.io/instance: "oai-cn5g"
+    heritage: "Helm"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-cn5g-mysql
+      app.kubernetes.io/instance: oai-cn5g
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-cn5g-mysql
+        app.kubernetes.io/instance: oai-cn5g
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      serviceAccountName: default
+      initContainers:
+      - name: "remove-lost-found"
+        image: "busybox:latest"
+        imagePullPolicy: "IfNotPresent"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        command:  ["rm", "-fr", "/var/lib/mysql/lost+found"]
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+      # - name: do-something
+      #   image: busybox
+      #   command: ['do', 'something']
+      
+      containers:
+      - name: oai-cn5g-mysql
+        image: "docker.io/mysql:9.0.1"
+        imagePullPolicy: "IfNotPresent"
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 200m
+            memory: 512Mi
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oai-cn5g-mysql
+              key: mysql-root-password
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oai-cn5g-mysql
+              key: mysql-password
+        - name: MYSQL_USER
+          value: "test"
+        - name: MYSQL_DATABASE
+          value: "oai_db"
+        ports:
+        - name: mysql
+          containerPort: 3306
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
+          initialDelaySeconds: 50
+          periodSeconds: 15
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+        - name: migrations
+          mountPath: /docker-entrypoint-initdb.d
+        # - name: extras
+        #   mountPath: /usr/share/extras
+        #   readOnly: true
+        
+      volumes:
+      - name: migrations
+        configMap:
+          name: oai-cn5g-mysql-initialization
+      - name: data
+        emptyDir: {}
+      # - name: extras
+      #   emptyDir: {}
+---
+# Source: monolithic-ran/charts/oai-amf/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-amf
+  labels:
+    helm.sh/chart: oai-amf-v2.1.0
+    app.kubernetes.io/name: oai-amf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-amf
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-amf
+        app.kubernetes.io/instance: oai-cn5g
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - until curl --connect-timeout 1 --head -X GET http://oai-nrf/nnrf-nfm/v1/nf-instances?nf-type='NRF' --http2-prior-knowledge; do echo waiting for oai-nrf; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+        
+        - name: init-udr
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - until ncat -zv oai-udr 80 ; do echo waiting for oai-udr to start; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+        
+      containers:
+      - name: tcpdump
+        image: "docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+           privileged: true
+           capabilities:
+              add:
+               - NET_ADMIN
+              drop:
+               - ALL
+        command:
+          - /bin/sleep
+          - infinity
+      - name: amf
+        image: "docker.io/oaisoftwarealliance/oai-amf:v2.1.0"
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /openair-amf/etc
+            name: configuration
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /openair-amf/bin/healthcheck.sh
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        ports:
+        - containerPort: 38412
+          name: oai-amf
+          protocol: SCTP
+        - containerPort: 80
+          name: http
+          protocol: TCP
+      volumes:
+      - configMap:
+          name: core
+        name: configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccountName: oai-amf
+      terminationGracePeriodSeconds: 5
+---
+# Source: monolithic-ran/charts/oai-ausf/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-ausf
+  labels:
+    helm.sh/chart: oai-ausf-v2.1.0
+    app.kubernetes.io/name: oai-ausf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-ausf
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-ausf
+        app.kubernetes.io/instance: oai-cn5g
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command: 
+            - /bin/sh
+            - -c
+            - until curl --connect-timeout 1 --head -X GET http://oai-nrf/nnrf-nfm/v1/nf-instances?nf-type='NRF' --http2-prior-knowledge; do echo waiting for oai-nrf; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+      containers:
+      - name: tcpdump
+        image: "docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+           privileged: true
+           capabilities:
+              add:
+               - NET_ADMIN
+              drop:
+               - ALL
+        command:
+          - /bin/sleep
+          - infinity
+      - name: ausf
+        image: "docker.io/oaisoftwarealliance/oai-ausf:v2.1.0"
+        volumeMounts:
+          - mountPath: /openair-ausf/etc
+            name: configuration
+        imagePullPolicy: IfNotPresent
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /openair-ausf/bin/healthcheck.sh
+          initialDelaySeconds: 2
+          periodSeconds: 3
+        ports:
+        - containerPort: 80
+          name: http
+      volumes:
+      - configMap:
+          name: core
+        name: configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: oai-ausf
+      terminationGracePeriodSeconds: 5
+---
+# Source: monolithic-ran/charts/oai-gnb/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-gnb
+  labels:
+    helm.sh/chart: oai-gnb-2.1.0
+    app.kubernetes.io/name: oai-gnb
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "develop"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-gnb
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-gnb
+        app.kubernetes.io/instance: oai-cn5g
+        app: oai-gnb
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - until ncat -zv oai-amf 38412 --sctp ; do echo waiting for oai-amf to start; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+      containers:
+      - name: gnb
+        image: "docker.io/oaisoftwarealliance/oai-gnb:2024.w32"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+            privileged: false
+        volumeMounts:
+          - mountPath: /opt/oai-gnb/etc
+            name: configuration
+            # subPath: gnb.conf
+          # USRP B210/B200 Mini
+        ports:
+        - containerPort: 2152
+          name: n3
+          protocol: UDP
+        - containerPort: 36412
+          name: n2
+          protocol: SCTP
+        command: [ "/bin/bash", "-c" ]
+        args:
+         -  AMF_IP_ADDRESS=$(getent hosts $AMF_HOST | awk '{print $1}');
+            AMF_IP_ADDRESS=$(if [[ $AMF_IP_ADDRESS ]]; then echo $AMF_IP_ADDRESS; else echo $AMF_HOST;fi);
+            N2_IP_ADDRESS=$(ip -f inet addr show $N2_IF_NAME | grep -o "inet [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*" | grep -o "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*");
+            N3_IP_ADDRESS=$(ip -f inet addr show $N3_IF_NAME | grep -o "inet [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*" | grep -o "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*");
+            sed -e s/@N2_IP_ADDRESS@/$N2_IP_ADDRESS/g
+                -e s/@N3_IP_ADDRESS@/$N3_IP_ADDRESS/g
+                -e s/@AMF_IP_ADDRESS@/$AMF_IP_ADDRESS/g
+                /opt/oai-gnb/etc/gnb.conf | tee /tmp/gnb.conf;
+            exec /opt/oai-gnb/bin/nr-softmodem -O /tmp/gnb.conf $USE_ADDITIONAL_OPTIONS;
+        env:
+          - name: TZ
+            value: Europe/Paris
+          - name: USE_ADDITIONAL_OPTIONS
+            value: --sa --rfsim --log_config.global_log_options level,nocolor,time
+          - name: AMF_HOST
+            value: oai-amf
+          - name: N2_IF_NAME
+            value: eth0
+          - name: N3_IF_NAME
+            value: eth0
+      - name: tcpdump
+        image: "docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+           capabilities:
+              add:
+               - NET_ADMIN
+               - NET_RAW
+              drop:
+               - ALL
+        command:
+          - /bin/sleep
+          - infinity
+      volumes:
+      - configMap:
+          name: oai-gnb-configmap
+        name: configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: oai-gnb-sa
+      terminationGracePeriodSeconds: 5
+---
+# Source: monolithic-ran/charts/oai-nr-ue/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-nr-ue
+  labels:
+    helm.sh/chart: oai-nr-ue-2.1.0
+    app.kubernetes.io/name: oai-nr-ue
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "develop"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-nr-ue
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-nr-ue
+        app.kubernetes.io/instance: oai-cn5g
+        app: oai-nr-ue
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - until ping -c 1  oai-ran; do echo waiting for oai-du to start; sleep 1; done
+      containers:
+      - name: nr-ue
+        image: "docker.io/oaisoftwarealliance/oai-nr-ue:2024.w32"
+        securityContext:
+            capabilities:
+              add:
+              - NET_ADMIN
+              - NET_RAW
+              - SYS_NICE
+              drop:
+              - ALL
+        volumeMounts:
+          - mountPath: /opt/oai-nr-ue/etc
+            name: configuration
+          - name: dev-net-tun
+            mountPath: /dev/net/tun
+          # USRP B210/B200 Mini
+        command: [ "/bin/bash", "-c" ]
+        args:
+          - RFSIM_IP_ADDRESS=$(getent hosts $RFSIM_HOST | awk '{print $1}');
+            RFSIM_IP_ADDRESS=$(if [[ $RFSIM_IP_ADDRESS ]]; then echo $RFSIM_IP_ADDRESS; else echo $RFSIM_HOST;fi);
+              exec /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.conf $USE_ADDITIONAL_OPTIONS --rfsimulator.serveraddr $RFSIM_IP_ADDRESS;
+        env:
+          - name: TZ
+            value: Europe/Paris
+          - name: RFSIM_HOST
+            value: oai-ran
+          - name: USE_ADDITIONAL_OPTIONS
+            value: --sa --rfsim -r 106 --numerology 1 -C 3619200000 --log_config.global_log_options level,nocolor,time
+      volumes:
+      - configMap:
+          name: oai-nr-ue-configmap
+        name: configuration
+      - name: dev-net-tun
+        hostPath:
+          path: /dev/net/tun
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccountName: oai-nr-ue-sa
+      terminationGracePeriodSeconds: 0
+---
+# Source: monolithic-ran/charts/oai-nrf/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-nrf
+  labels:
+    helm.sh/chart: oai-nrf-v2.1.0
+    app.kubernetes.io/name: oai-nrf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-nrf
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-nrf
+        app.kubernetes.io/instance: oai-cn5g
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      containers:
+      - name: tcpdump
+        image: "docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+           privileged: true
+           capabilities:
+              add: 
+               - NET_ADMIN
+              drop: 
+               - ALL
+        command:
+          - /bin/sleep
+          - infinity
+      - name: nrf
+        image: "docker.io/oaisoftwarealliance/oai-nrf:v2.1.0"
+        volumeMounts:
+          - mountPath: /openair-nrf/etc
+            name: configuration
+        imagePullPolicy: IfNotPresent
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /openair-nrf/bin/healthcheck.sh
+          initialDelaySeconds: 2
+          periodSeconds: 2
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+      volumes:
+      - configMap:
+          name: core
+        name: configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccountName: oai-nrf
+      terminationGracePeriodSeconds: 5
+---
+# Source: monolithic-ran/charts/oai-smf/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-smf
+  labels:
+    helm.sh/chart: oai-smf-v2.1.0
+    app.kubernetes.io/name: oai-smf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-smf
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-smf
+        app.kubernetes.io/instance: oai-cn5g
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command: 
+            - /bin/sh
+            - -c
+            - until curl --connect-timeout 1 --head -X GET http://oai-nrf/nnrf-nfm/v1/nf-instances?nf-type='NRF' --http2-prior-knowledge; do echo waiting for oai-nrf; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+      containers:
+      - name: tcpdump
+        image: "docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+           privileged: true
+           capabilities:
+              add:
+               - NET_ADMIN
+              drop:
+               - ALL
+        command:
+          - /bin/sleep
+          - infinity
+      - name: smf
+        image: "docker.io/oaisoftwarealliance/oai-smf:v2.1.0"
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /openair-smf/etc
+            name: configuration
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /openair-smf/bin/healthcheck.sh
+          initialDelaySeconds: 2
+          periodSeconds: 3
+        ports:
+        - containerPort: 8805
+          name: oai-smf
+        - containerPort: 80
+          name: http
+      volumes:
+      - configMap:
+          name: core
+        name: configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccountName: oai-smf
+      terminationGracePeriodSeconds: 5
+---
+# Source: monolithic-ran/charts/oai-traffic-server/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-traffic-server
+  labels:
+    app.kubernetes.io/version: "v1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-traffic-server
+      app.kubernetes.io/instance: oai-traffic-server
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-traffic-server
+        app.kubernetes.io/instance: oai-traffic-server
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - until ncat -zv oai-upf 2152 --udp ; do echo waiting for oai-upf to start; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+      containers:
+      - name: iperf3
+        volumeMounts:
+        - mountPath: /tmp/script.sh
+          name: scripts
+          subPath: script.sh 
+        command: ["/tmp/script.sh"]
+        image: "docker.io/oaisoftwarealliance/trf-gen-cn5g:latest"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+            capabilities:
+              add:
+              - NET_ADMIN
+              - NET_RAW
+              drop:
+              - ALL
+        readinessProbe:
+          exec:
+            command:
+            - pgrep
+            - iperf3
+          initialDelaySeconds: 5
+          periodSeconds: 3
+      volumes:
+      - name: scripts
+        configMap:
+          name: iperf-pod
+          defaultMode: 0777
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: oai-traffic-server
+      terminationGracePeriodSeconds: 2
+---
+# Source: monolithic-ran/charts/oai-udm/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-udm
+  labels:
+    helm.sh/chart: oai-udm-v2.1.0
+    app.kubernetes.io/name: oai-udm
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-udm
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-udm
+        app.kubernetes.io/instance: oai-cn5g
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command: 
+            - /bin/sh
+            - -c
+            - until curl --connect-timeout 1 --head -X GET http://oai-nrf/nnrf-nfm/v1/nf-instances?nf-type='NRF' --http2-prior-knowledge; do echo waiting for oai-nrf; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+      containers:
+      - name: tcpdump
+        image: "docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+           privileged: true
+           capabilities:
+              add:
+               - NET_ADMIN
+              drop:
+               - ALL
+        command:
+          - /bin/sleep
+          - infinity
+      - name: udm
+        image: "docker.io/oaisoftwarealliance/oai-udm:v2.1.0"
+        volumeMounts:
+          - mountPath: /openair-udm/etc
+            name: configuration
+        imagePullPolicy: IfNotPresent
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /openair-udm/bin/healthcheck.sh
+          initialDelaySeconds: 2
+          periodSeconds: 3
+        ports:
+        - containerPort: 80
+          name: http
+      volumes:
+      - configMap:
+          name: core
+        name: configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: oai-udm
+      terminationGracePeriodSeconds: 5
+---
+# Source: monolithic-ran/charts/oai-udr/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-udr
+  labels:
+    helm.sh/chart: oai-udr-v2.1.0
+    app.kubernetes.io/name: oai-udr
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-udr
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-udr
+        app.kubernetes.io/instance: oai-cn5g
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command: 
+            - /bin/sh
+            - -c
+            - until curl --connect-timeout 1 --head -X GET http://oai-nrf/nnrf-nfm/v1/nf-instances?nf-type='NRF' --http2-prior-knowledge; do echo waiting for oai-nrf; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+      containers:
+      - name: tcpdump
+        image: "docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+           privileged: true
+           capabilities:
+              add:
+               - NET_ADMIN
+              drop:
+               - ALL
+        command:
+          - /bin/sleep
+          - infinity
+      - name: udr
+        image: "docker.io/oaisoftwarealliance/oai-udr:v2.1.0"
+        volumeMounts:
+          - mountPath: /openair-udr/etc
+            name: configuration
+        imagePullPolicy: IfNotPresent
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /openair-udr/bin/healthcheck.sh
+          initialDelaySeconds: 2
+          periodSeconds: 3
+        ports:
+        - containerPort: 80
+          name: http
+      volumes:
+      - configMap:
+          name: core
+        name: configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: oai-udr
+      terminationGracePeriodSeconds: 5
+---
+# Source: monolithic-ran/charts/oai-upf/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oai-upf
+  labels:
+    helm.sh/chart: oai-upf-v2.1.0
+    app.kubernetes.io/name: oai-upf
+    app.kubernetes.io/instance: oai-cn5g
+    app.kubernetes.io/version: "v2.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oai-upf
+      app.kubernetes.io/instance: oai-cn5g
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oai-upf
+        app.kubernetes.io/instance: oai-cn5g
+    spec:
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      imagePullSecrets:
+                - name: regcred
+      initContainers:
+        - name: init
+          image: docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20
+          imagePullPolicy: IfNotPresent
+          command: 
+            - /bin/sh
+            - -c
+            - until curl --connect-timeout 1 --head -X GET http://oai-nrf/nnrf-nfm/v1/nf-instances?nf-type='NRF' --http2-prior-knowledge; do echo waiting for oai-nrf; sleep 1; done
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 1m
+            limits:
+              memory: 50Mi
+              cpu: 1m
+      containers:
+      - name: tcpdump
+        image: "docker.io/oaisoftwarealliance/oai-tcpdump-init:alpine-3.20"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+            privileged: true
+        command:
+          - /bin/sleep
+          - infinity
+      - name: upf
+        image: "docker.io/oaisoftwarealliance/oai-upf:v2.1.0"
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /openair-upf/etc
+            name: configuration
+        securityContext:
+            privileged: true
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /openair-upf/bin/healthcheck.sh
+          initialDelaySeconds: 2
+          periodSeconds: 3
+        ports:
+        - containerPort: 8805
+          name: pfcp
+        - containerPort: 2152
+          name: s1u
+      volumes:
+      - configMap:
+          name: core
+        name: configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: oai-upf
+      terminationGracePeriodSeconds: 5
+---
+# Source: monolithic-ran/charts/oai-amf/templates/multus.yaml
+---
+---
+# Source: monolithic-ran/charts/oai-gnb/templates/multus.yaml
+---
+---
+# Source: monolithic-ran/charts/oai-smf/templates/multus.yaml
+---
+---
+# Source: monolithic-ran/charts/oai-upf/templates/multus.yaml
+---
+---
+# Source: monolithic-ran/charts/oai-upf/templates/multus.yaml
+---
