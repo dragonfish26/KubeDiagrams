@@ -881,6 +881,37 @@ def update_resource_labels(resource, recommended_labels):
 
 # ALGO 1 END
 
+def process_clusters(cluster, resource, clusters):
+        """
+            Process a resource.
+        """
+
+        for cluster_config in clusters:
+            if "label" in cluster_config:
+
+                label = cluster_config["label"]
+                labels = query_path(resource, "metadata.labels")
+
+                if isinstance(labels, dict) and label in labels:
+
+                    cluster_config_title = cluster_config['title']
+                            
+                    if cluster_config_title.find("{") == -1:
+                        metadata_label_value = labels[label]
+                        if metadata_label_value is not None:
+                            cluster_name = f"{cluster_config_title}: {metadata_label_value}"
+                        else:
+                            cluster_name = cluster_config_title
+                    else:
+                        cluster_name = cluster_config_title.format(labels[label])
+                    cluster = cluster.get_or_create_cluster(cluster_name)
+                    #print(f"Cluster: {cluster.name} for resource {get_name(resource)} : resource labels {labels}")
+                    #cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
+                    clusters.remove(cluster_config)
+                    return process_clusters(cluster, resource, clusters)
+
+        return cluster
+
 def process_resource(resource):
     """
         Process a resource.
@@ -913,36 +944,6 @@ def process_resource(resource):
                         f"Namespace: {get_namespace(resource)}"
                     )
 
-    def process_clusters(cluster, resource, clusters):
-        """
-            Process a resource.
-        """
-
-        for cluster_config in clusters:
-            if "label" in cluster_config:
-
-                label = cluster_config["label"]
-                labels = query_path(resource, "metadata.labels")
-
-                if isinstance(labels, dict) and label in labels:
-
-                    cluster_config_title = cluster_config['title']
-                            
-                    if cluster_config_title.find("{") == -1:
-                        metadata_label_value = labels[label]
-                        if metadata_label_value is not None:
-                            cluster_name = f"{cluster_config_title}: {metadata_label_value}"
-                        else:
-                            cluster_name = cluster_config_title
-                    else:
-                        cluster_name = cluster_config_title.format(labels[label])
-                    cluster = cluster.get_or_create_cluster(cluster_name)
-                    #cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
-                    clusters.remove(cluster_config)
-                    return process_clusters(cluster, resource, clusters)
-
-        return cluster
-
     cluster = process_clusters(
                 cluster,
                 resource,
@@ -966,38 +967,6 @@ def process_resource(resource):
             raise
         for node in nodes:
             process_resource(node)
-    
-    
-
-def draw_ressource(resource):
-    """
-        Draw all resources.
-    """
-
-    cluster = resource_cluster
-
-    def draw_clusters(cluster, resource, clusters):
-        """
-            Draw cluster?
-        """
-
-        for cluster_config in clusters:
-            if "label" in cluster_config:
-
-                label = cluster_config["label"]
-                labels = query_path(resource, "metadata.labels")
-
-                if isinstance(labels, dict) and label in labels:
-
-                    cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
-                    clusters.remove(cluster_config)
-                    draw_clusters(cluster, resource, clusters)
-    
-    draw_clusters(
-                cluster,
-                resource,
-                copy.deepcopy(config.get("clusters", []))
-            )
 
 for filename in args.filename:
     try:
@@ -1043,6 +1012,77 @@ def warning_cluster(cluster):
             break
 
 # ALGO 3 END  
+
+new_resource_cluster = ResourceCluster("ROOT") # Clustering resources
+
+def reprocess_resources1(resource, rid):
+    """
+        Process a resource.
+    """
+
+    cluster = new_resource_cluster
+    name = get_name(resource)
+    if get_node_config(resource).get("scope") == "Cluster":
+        rid = name + "/" + get_type(resource)
+        resources[rid] = resource
+
+        if not(args.without_namespace) and resource.get("kind") == "Namespace":
+            cluster = new_resource_cluster.get_or_create_cluster(f"Namespace: {name}")
+    else: # scope = Namespaced
+        rid = name + "/" + get_namespace(resource) + "/" + get_type(resource)
+        resources[rid] = resource
+        if not args.without_namespace:
+            cluster = new_resource_cluster.get_or_create_cluster(
+                        f"Namespace: {get_namespace(resource)}"
+                    )
+
+
+    #for resource_id, resource in resources.items():
+
+        #print(f"Reprocessing resource {resource_id} : {resource}")
+
+    cluster = process_clusters(
+                cluster,
+                resource,
+                copy.deepcopy(config.get("clusters", []))
+            )
+    cluster.resources[rid] = resource
+
+def reprocess_resources():
+
+    for resource_id, resource in resources.items():
+        reprocess_resources1(resource, resource_id)
+
+
+def draw_ressource(resource):
+    """
+        Draw all resources.
+    """
+
+    cluster = new_resource_cluster
+
+    def draw_clusters(cluster, resource, clusters):
+        """
+            Draw cluster?
+        """
+
+        for cluster_config in clusters:
+            if "label" in cluster_config:
+
+                label = cluster_config["label"]
+                labels = query_path(resource, "metadata.labels")
+
+                if isinstance(labels, dict) and label in labels:
+
+                    cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
+                    clusters.remove(cluster_config)
+                    draw_clusters(cluster, resource, clusters)
+    
+    draw_clusters(
+                cluster,
+                resource,
+                copy.deepcopy(config.get("clusters", []))
+            )
                 
 #warning_cluster(resource_cluster)            
 
@@ -1238,91 +1278,56 @@ def resource_can_be_moved(resource, intersection_dict):
     # Otherwise, it's safe to move
     return True
 
-def get_parent_label_intersection(resource_id, dict_to_use, resources):
+def get_label_intersection(resource_id, dict_to_use, resources):
     label_sets = []
-    for parent_id in dict_to_use[resource_id]:
-        parent = resources.get(parent_id)
+    cluster_labels = [c.get("label") for c in config.get("clusters", []) if "label" in c]
+
+    for id in dict_to_use[resource_id]:
+        parent = resources.get(id)
         if not parent:
             continue
         labels = query_path(parent, "metadata.labels", {})
-        if isinstance(labels, dict):
-            label_sets.append(set(labels.items()))
+        intersection_cluster_labels = {k: v for k, v in labels.items() if k in cluster_labels}
+
+        if isinstance(intersection_cluster_labels, dict):
+            label_sets.append(set(intersection_cluster_labels.items()))
     if not label_sets:
         return None
     
     #print(f"Resource ID: {resource_id}, Parent Nodes: {parent_nodes[resource_id]}")
     return set.intersection(*label_sets)
 
-def move_resource_to_intersection_cluster(resource, resource_id, intersection_dict, cluster, resource_cluster):
-    """
-    Move a resource to a new cluster that is calculated from the intersection of its 
-    parent or child nodes' labels.
-    """
 
-    cluster_labels = [c.get("label") for c in config.get("clusters", []) if "label" in c]
-    intersection_dict = {k: v for k, v in intersection_dict.items() if k in cluster_labels}
+
+def assign_inter_labels_to_resource(resource, intersection_dict):
+    """
+    Assign intersection labels to the resource.
+    """
 
     if not intersection_dict:
         return False
     
-    #if resource_has_inter_labels(resource, intersection_dict):
-        #return False
-
     if not resource_can_be_moved(resource, intersection_dict):
         return False
     
-    label_to_title = {c["label"]: c["title"] for c in config.get("clusters", []) if "label" in c and "title" in c}
-    inter_cluster = find_cluster_by_labels(resource_cluster, intersection_dict, label_to_title)
+    print(f"Assigning intersection labels {intersection_dict} to resource {get_name(resource)}")
+    print(f"Before labels: {query_path(resource, 'metadata.labels', {})}")
 
-    if inter_cluster is not None:
-        labels = query_path(resource, "metadata.labels")
-        if labels is not None:
-            del cluster.resources[resource_id]
-            new_inter_cluster = generate_new_inter_cluster(inter_cluster, labels, config.get("clusters", []))
-            new_inter_cluster.resources[resource_id] = resource
-            # Update the labels in the resource metadata 
-            labels.update(intersection_dict)
-        else:
-            resource["metadata"]["labels"] = dict(intersection_dict)
+    
+    labels = query_path(resource, "metadata.labels", {})
+    if not isinstance(labels, dict):
+        labels = {}
+    
+    # Update the labels in the resource metadata 
+    labels.update(intersection_dict)
+    resource["metadata"]["labels"] = labels
 
-            # Move the resource to the new cluster
+    print(f"After labels: {query_path(resource, 'metadata.labels', {})}")
+    print("---")
 
-            del cluster.resources[resource_id]
-            inter_cluster.resources[resource_id] = resource
-            
-        return True
-    return False
+    return True
 
-def generate_new_inter_cluster(cluster, labels, cluster_configs):
-    """
-    Generate a new cluster nested in the intersection cluster
-    using the resource existing labels 
-    """
 
-    for cluster_config in cluster_configs:
-
-        if "label" in cluster_config:
-                label = cluster_config["label"]
-                #labels = query_path(resource, "metadata.labels")
-                if isinstance(labels, dict) and label in labels:
-                    cluster_config_title = cluster_config['title']
-                    if cluster_config_title.find("{") == -1:
-                        metadata_label_value = labels[label]
-                        if metadata_label_value is not None:
-                            cluster_name = f"{cluster_config_title}: {metadata_label_value}"
-                        else:
-                            cluster_name = cluster_config_title
-                    else:
-                        cluster_name = cluster_config_title.format(labels[label])
-                    cluster = cluster.get_or_create_cluster(cluster_name)
-                    cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
-                    cluster_configs.remove(cluster_config)
-                    del labels[label]  # Remove the label from labels to avoid infinite recursion
-                    return generate_new_inter_cluster(cluster, labels, cluster_configs)
-            
-    return cluster
-
-loop_count = 0
 
 def label_intersection(cluster, dict_to_use):
     global loop_count
@@ -1339,7 +1344,7 @@ def label_intersection(cluster, dict_to_use):
         if resource_id not in dict_to_use:
             continue
 
-        common_labels = get_parent_label_intersection(resource_id, dict_to_use, resources)
+        common_labels = get_label_intersection(resource_id, dict_to_use, resources)
         #print(f"Resource ID: {resource_id}, Common Labels: {common_labels}")
         
         if not common_labels:
@@ -1347,9 +1352,11 @@ def label_intersection(cluster, dict_to_use):
 
         intersection_dict = dict(common_labels)
 
-        moved = move_resource_to_intersection_cluster(resource, resource_id, intersection_dict, cluster, resource_cluster)
+        #moved = move_resource_to_intersection_cluster(resource, resource_id, intersection_dict, cluster, resource_cluster)
 
-        if not moved:
+        assigned = assign_inter_labels_to_resource(resource, intersection_dict)
+
+        if not assigned:
             continue # Skip this resource if it was not moved
 
         #print("---")
@@ -1360,222 +1367,6 @@ def label_intersection(cluster, dict_to_use):
         label_intersection(subcluster, dict_to_use)
         
 # END OF ALGO 2
-
-# ALGO 4 : Assign labels to remaining resources without labels
-
-def assign_labels_to_no_labels_resources(cluster):
-    # Move resources at the root level (not in any cluster)
-    for resource_id, resource in list(cluster.resources.items()):
-        compatible_cluster = find_unique_nested_cluster(
-            cluster, ["K8s Instance", "Helm Chart", "K8s Component"])
-        
-        #print("Compatible cluster (no namespace):", compatible_cluster.name)
-
-        if compatible_cluster != "ROOT": 
-            del cluster.resources[resource_id]
-            compatible_cluster.resources[resource_id] = resource
-
-    # Move resources that are directly in a Namespace cluster 
-    for sub_cluster in cluster.clusters.values():
-        if sub_cluster.name.startswith("Namespace:"):
-
-            for resource_id, resource in list(sub_cluster.resources.items()):
-                compatible_cluster = find_unique_nested_cluster(
-                    sub_cluster, ["K8s Instance", "Helm Chart", "K8s Component"])
-                
-                print(f"Compatible cluster (namespace):", compatible_cluster.name)
-
-                if compatible_cluster != "ROOT": 
-                    del sub_cluster.resources[resource_id]
-                    compatible_cluster.resources[resource_id] = resource
-
-
-def find_unique_nested_cluster(cluster, cluster_names):
-    """
-    Recursively find the first cluster that matches the sequence of cluster_names.
-    """
-    if not cluster_names:
-        return cluster
-
-    non_namespace_clusters = [
-        sc for sc in cluster.clusters.values()
-        if not sc.name.startswith("Namespace:")
-    ]
-    matches = [sc for sc in non_namespace_clusters if sc.name.startswith(cluster_names[0])]
-
-    if len(matches) == 1:
-        return find_unique_nested_cluster(matches[0], cluster_names[1:])
-    else:
-        return cluster
-
-# END OF ALGO 4
-
-# ALGO 5 : CREATE NEW CLUSTERS FOR NO LABEL RESOURCES USING NAMES
-
-''' 
-Entrées : un graphe non orienté G.
-Sortie : les composantes connexes de G, identifiées par la liste de leurs sommets.
-1 résultat← liste();
-2 déjà_visités← tableau(G.nombre_sommets(), FAUX);
-3 pour chaque sommet dans G.sommets() faire
-4 si ¬ déjà_visités[sommet] alors
-5 résultat.ajouter_en_fin(PARCOURSLARGEURITÉRATIF(G, sommet,
-déjà_visités));
-6 renvoyer résultat
-
-Algorithme 5 : PARCOURSLARGEURITÉRATIF(G, départ, déjà_visités=NIL)
-Entrées : un graphe non-orienté G et un sommet de départ; éventuellement, un
-tableau déjà_visités de |V | cases indiquant les sommets déjà traités.
-Sortie : la liste des sommets de G accessibles depuis le départ dans l’ordre où le
-parcours en largeur les a découverts.
-1 résultat← liste();
-2 si déjà_visités = NIL alors déjà_visités← tableau(G.nombre_sommets(), FAUX);
-3 a_traiter← file();
-4 a_traiter.enfiler(départ);
-5 tant que a_traiter.pas_vide() faire
-6 sommet ← a_traiter.défiler();
-7 si ¬ déjà_visités[sommet] alors
-8 résultat.ajouter_en_fin(sommet);
-9 déjà_visités[sommet]← VRAI;
-10 pour chaque voisin dans G.voisins(sommet) faire
-11 si ¬ déjà_visités[voisin] alors a_traiter.enfiler(voisin) ;
-12 renvoyer résultat;
-
-'''
-
-def get_neighbors(resource_id):
-    """
-    Construct a list of neighbors for a given resource_id in the cluster.
-    """
-    neighbors = []
-    resource = resources.get(resource_id)
-    
-    if not resource:
-        return neighbors
-
-    # Check parent nodes
-    for parent_id in parent_nodes.get(resource_id, []):
-        if parent_id in resources:
-            neighbors.append(parent_id)
-
-    # Check child nodes
-    for child_id in child_nodes.get(resource_id, []):
-        if child_id in resources:
-            neighbors.append(child_id)
-
-    return neighbors
-
-def bfs_iterative(cluster, start, visited=None):
-    """
-    Perform a breadth-first search (BFS) on the graph starting from the given node.
-    Returns a list of nodes in the order they were visited.
-    """
-    if visited is None:
-        #visited = [False] * get_no_label_resources(cluster)
-        visited = {resource_id: False for resource_id in get_no_label_resources(cluster)}
-
-    result = []
-    queue = [start]
-
-    while queue:
-        node = queue.pop(0)
-        if not visited[node]:
-            result.append(node)
-            visited[node] = True
-            for neighbor in get_neighbors(node):
-                if not visited[neighbor]:
-                    queue.append(neighbor)
-
-    return result
-
-def find_connected_components(cluster):
-    """
-    Find connected components in an undirected graph.
-    Returns a list of lists, where each inner list contains the nodes of a connected component.
-    """
-
-    result = []
-    visited = {resource_id: False for resource_id in get_no_label_resources(cluster)}
-
-    for node in get_no_label_resources(cluster):
-        if not visited[node]:
-            component = bfs_iterative(cluster, node, visited)
-            result.append(component)
-
-    return result
-
-def get_no_label_resources(cluster):
-    """
-    Get a list of resources that do not have any labels.
-    """
-    no_label_resources = []
-
-    for resource_id, resource in cluster.resources.items():
-        print(f"checking: {resource_id} : {resource}")
-        no_label_resources.append(resource_id)
-
-    for sub_cluster in cluster.clusters.values():
-        if sub_cluster.name.startswith("Namespace:"):
-            for resource_id, resource in sub_cluster.resources.items():
-                    no_label_resources.append(resource_id)
-
-    return no_label_resources
-
-
-def print_connected_components(cluster):
-    """
-    Print the connected components of the graph.
-    """
-    components = find_connected_components(cluster)
-    print("Connected components:")
-    for idx, component in enumerate(components):
-        print(f"Component {idx + 1}:")
-        for resource_id in component:
-            print(f"  {resource_id}, ")
-
-
-def create_node_for_component(component):
-    name = ""
-
-    for resource_id in component:
-        resource = resources.get(resource_id)
-        if resource is None:
-            continue
-
-        if name == "":
-            name = get_name(resource)
-        else:
-            name = common_prefix(name, get_name(resource))
-
-    new_cluster = resource_cluster.get_or_create_cluster((f"K8s Application: {name}"))
-    for resource_id in component:
-        resource = resources.get(resource_id)
-        if resource is None:
-            continue
-        rid = get_name(resource) + "/" + get_namespace(resource) + "/" + get_type(resource)
-        del resource_cluster.resources[resource_id]
-        new_cluster.resources[rid] = resource
-
-def create_clusters_for_connected_components(cluster):
-    """
-    Create clusters for each connected component in the graph.
-    Each cluster will contain resources that are connected to each other.
-    """
-    components = find_connected_components(cluster)
-    for component in components:
-        if len(component) > 1:  # Only create clusters for components with more than one resource
-            create_node_for_component(component)
-
-
-def common_prefix(s1, s2):
-    result = []
-    for a, b in zip(s1, s2):
-        if a == b:
-            result.append(a)
-        else:
-            break
-    return ''.join(result)
-
 
 
 def create_nodes(cluster):
@@ -1640,14 +1431,9 @@ label_intersection(resource_cluster, parent_nodes)
 
 label_intersection(resource_cluster, child_nodes)
 
-# Assign labels to resources without labels
-assign_labels_to_no_labels_resources(resource_cluster)
+reprocess_resources()  # Reprocess resources after label intersection
 
-# ALGO 5
-
-print_connected_components(resource_cluster)
-
-create_clusters_for_connected_components(resource_cluster)
+resource_cluster = new_resource_cluster # Use the new resource cluster after label intersection
 
 # Generate diagram
 generate_diagram_in_cluster = query_path(config, "diagram.generate_diagram_in_cluster")
@@ -1672,7 +1458,7 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
     print("---")
     print("Clusters after label intersection:")
     print("---")
-    resource_cluster.display()
+    new_resource_cluster.display()
     
     """
     # Generate diagram nodes
