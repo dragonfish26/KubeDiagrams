@@ -34,30 +34,39 @@ clusters:
   - label: app.kubernetes.io/instance
     title: K8s Instance
     recommended: true
+    recommended_label: None
   - label: release
     title: Release
     recommended: false
+    recommended_label: app.kubernetes.io/instance
   - label: helm.sh/chart
     title: Helm Chart
     recommended: true
+    recommended_label: None
   - label: chart
     title: Chart
     recommended: false
+    recommended_label: helm.sh/chart
   - label: app.kubernetes.io/name
     title: K8s Application
     recommended: true
+    recommended_label: None
   - label: app
     title: Application
     recommended: false
+    recommended_label: app.kubernetes.io/name
   - label: app.kubernetes.io/component
     title: K8s Component
     recommended: true
+    recommended_label: None
   - label: service
     title: Microservice
     recommended: false
+    recommended_label: None
   - label: tier
     title: Tier
     recommended: false
+    
 nodes:
   APIService/apiregistration.k8s.io/v1:
     scope: Cluster
