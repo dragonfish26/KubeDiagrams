@@ -24,8 +24,6 @@ edges:
     color: brown
   DEPENDENCE:
     color: darkgrey
-  UNDEFINED:
-    color: red
   INVISIBLE:
     color: transparent
     style: invisible
@@ -35,38 +33,63 @@ clusters:
     title: K8s Instance
     recommended: true
     recommended_label: None
+    graph_attr:
+      bgcolor: "#E5F5FD"
   - label: release
     title: Release
     recommended: false
     recommended_label: app.kubernetes.io/instance
+    graph_attr:
+      bgcolor: "#E5F5FD"
   - label: helm.sh/chart
     title: Helm Chart
     recommended: true
     recommended_label: None
+    graph_attr:
+      bgcolor: "#EBF3E7"
   - label: chart
     title: Chart
     recommended: false
     recommended_label: helm.sh/chart
+    graph_attr:
+      bgcolor: "#EBF3E7"
   - label: app.kubernetes.io/name
     title: K8s Application
     recommended: true
     recommended_label: None
+    graph_attr:
+      bgcolor: "#ECE8F6"
   - label: app
     title: Application
     recommended: false
     recommended_label: app.kubernetes.io/name
+    graph_attr:
+      bgcolor: "#ECE8F6"
   - label: app.kubernetes.io/component
     title: K8s Component
     recommended: true
     recommended_label: None
+    graph_attr:
+      bgcolor: "#FDF7E3"
   - label: service
     title: Microservice
     recommended: false
     recommended_label: None
+    graph_attr:
+      bgcolor: "#FDF7E3"
   - label: tier
     title: Tier
     recommended: false
-    
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#FDF7E3"
+  - annotation: helm.sh/hook
+    title: "{}"
+    recommended: true
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#EBF3E7"
+      style: dotted,rounded
 nodes:
   APIService/apiregistration.k8s.io/v1:
     scope: Cluster
@@ -176,6 +199,7 @@ nodes:
         "REFERENCE"
       )
   DaemonSet/apps/v1beta2: DaemonSet/apps/v1
+  DaemonSet/extensions/v1beta1: DaemonSet/apps/v1
   Deployment/apps/v1:
     scope: Namespaced
     diagram_node_classname: diagrams.k8s.compute.Deploy
@@ -195,6 +219,7 @@ nodes:
         "node.k8s.io/v1",
         "REFERENCE"
       )
+  Deployment/extensions/v1beta1: Deployment/apps/v1
   Deployment/apps/v1beta1: Deployment/apps/v1
   Deployment/apps/v1beta2: Deployment/apps/v1
   Endpoints/v1:
@@ -260,6 +285,7 @@ nodes:
         "REFERENCE"
       )
   Ingress/networking.k8s.io/v1beta1: Ingress/networking.k8s.io/v1
+  Ingress/extensions/v1beta1: Ingress/networking.k8s.io/v1
   IngressClass/networking.k8s.io/v1:
     scope: Cluster
     custom_icon: $KD/icons/ic.png
@@ -403,6 +429,7 @@ nodes:
     diagram_node_classname: diagrams.k8s.others.PSP
     # no edges
   PodSecurityPolicy/policy/v1beta1: PodSecurityPolicy/policy/v1
+  PodSecurityPolicy/extensions/v1beta1: PodSecurityPolicy/policy/v1
   PodTemplate/v1:
     scope: Namespaced
     custom_icon: $KD/icons/podtemplate.png
@@ -513,6 +540,10 @@ nodes:
         pvc["metadata"]["name"] = f'{pvc["metadata"]["name"]}-{resource["metadata"]["name"]}'
         if namespace is not None:
           pvc["metadata"]["namespace"] = namespace
+        pvc["metadata"]["labels"] = {
+          **query_path(resource, "metadata.labels", {}),
+          **query_path(pvc, "metadata.labels", {})
+        }
         nodes.append(pvc)
     edges: |
       edges.add_owned_resources()

@@ -12,9 +12,11 @@ import traceback
 from pprint import pprint
 import sys
 import yaml
-from diagrams import Diagram, Edge, Cluster
+import diagrams
+from diagrams import Edge, Cluster
 from diagrams.aws.enablement import ManagedServices
 from diagrams.custom import Custom
+from diagrams.k8s.group import Namespace
 
 # According to https://github.com/yaml/pyyaml/issues/89, PyYAML raises
 # yaml.constructor.ConstructorError: could not determine a constructor for
@@ -22,6 +24,51 @@ from diagrams.custom import Custom
 # when loading a string equals to the unquoted value '='.
 # A proposed fix is
 yaml.SafeLoader.yaml_implicit_resolvers.pop("=")
+
+#
+# Extensions of diagrams framework
+#
+
+# All dot output formats are listed in https://graphviz.org/docs/outputs/
+# If you need a format not listed below, just add it below.
+SUPPORTED_OUTPUT_FORMATS = (
+    "dot", "dot_json", "gif", "jp2", "jpe", "jpeg", "jpg", "pdf", "png",
+    "svg", "tif", "tiff"
+)
+class Diagram(diagrams.Diagram):
+    """
+        Enhancement of the Diagram class to add new output formats.
+    """
+    # pylint: disable-next=unused-private-member
+    __outformats = SUPPORTED_OUTPUT_FORMATS
+
+# Inspired from https://github.com/mingrammer/diagrams/pull/853
+def icon(node: object, label: str, size=64):
+    """
+    Function adds a Diagrams-compatible icon
+
+    :param node: Diagrams object, like VPC or Docker
+    :param label: Label text, like "subnet-a"
+    :param size: Icon size in px.
+    :returns: "Label prefixed with a specified icon"
+    """
+    # pylint: disable-next=too-few-public-methods
+    class Node(node):
+        """
+            Overloading Node class.
+        """
+        def __init__(self):
+            """
+                Initialisation.
+            """
+            # pass # do nothing!
+
+    # pylint: disable-next=protected-access
+    icon_path = Node()._load_icon()
+    return '<<table border="0" width="100%"><tr><td fixedsize="true" width="' \
+            + str(size) + '" height="' + str(size) \
+            + '"><img src="' + icon_path + '" /></td></tr><tr><td>' \
+            + label + '</td></tr></table>>'
 
 # Maximum length for diagram node labels
 MAX_NODE_LABEL_LENGTH = 16
@@ -58,18 +105,26 @@ def get_edge_config(edge_kind):
         print(f"Error: {edge_kind} edge configuration not found!")
     return edge_config if edge_config else {}
 
+__REPORT_REENTRANCE__ = True
+
 def report(kind, resource, path, msg, end):
     """
         Report.
     """
+    # pylint: disable=global-statement
+    global __REPORT_REENTRANCE__
+    if not __REPORT_REENTRANCE__:
+        return
+    __REPORT_REENTRANCE__ = False
     rm = f"[{kind}] " \
         + query_path(resource, "kind", "NO-KIND") + ":" \
-        + query_path(resource, "metadata.name", "NO-NAME")
+        + get_name(resource)
     if path is not None:
         rm += f":{path}"
     rm += f" - {msg}{end}"
     # GOOD: it is fine to log data that is not sensitive
     print(rm)
+    __REPORT_REENTRANCE__ = True
 
 def info(resource, path, msg):
     """
@@ -88,6 +143,15 @@ def error(resource, path, msg):
         Report an error message.
     """
     report("Error", resource, path, msg, '!')
+
+def get_node_config_of_resource_type(resource_type):
+    """
+        Get the configuration for a Kubernetes resource type.
+    """
+    node_config = config.get("nodes", {}).get(resource_type)
+    while isinstance(node_config, str):
+        node_config = config.get("nodes", {}).get(node_config)
+    return node_config
 
 # Get config associated to a resource.
 already_warned_node_configs = set()
@@ -108,6 +172,17 @@ def get_node_config(resource):
             already_warned_node_configs.add(resource_type)
     return node_config if node_config else {}
 
+class Resource(dict):
+    """
+        Kubernetes resource.
+    """
+    def __init__(self, data, fn):
+        """
+            Initialize a Kubernetes resource.
+        """
+        dict.__init__(self, data)
+        self.filename = fn
+
 def get_type(resource):
     """
         Get the type of a Kubernetes resource, i.e., "kind/apiVersion".
@@ -119,10 +194,15 @@ def get_name(resource):
     """
         Get the name of a Kubernetes resource.
     """
-    name = query_path(resource, "metadata.name")
+    name = query_path(resource, "metadata.name") \
+        or query_path(resource, "metadata.generateName")
     if name is None:
         warning(resource, "metadata.name", "Not set or set to null")
         name = "NO-NAME"
+        if "metadata" in resource:
+            resource["metadata"]["name"] = name
+        else:
+            resource["metadata"] = { "name": name }
     return name
 
 def get_namespace(resource):
@@ -223,7 +303,6 @@ class ResourceCluster:
             print("  " * ident, f"- {cid}")
             sub_cluster.display(ident + 1)
 
-
 class EdgesContext(list):
     """
         Context provided to edges configuration scripts.
@@ -262,7 +341,15 @@ class EdgesContext(list):
         edge_kind = edge[-1]
         if isinstance(edge_kind, str):
             edge_kind = dict(get_edge_config(edge_kind))
-        edge_kind["tooltip"] = path
+        if "tooltip" not in edge_kind and path is not None:
+            data = query_path(self.resource, path)
+            if data is None:
+                tooltip = path
+            else:
+                tooltip = yaml.dump({path: data}, default_flow_style=False)[:-1]
+                if len(tooltip) > 16384: # dot parsing limit!
+                    tooltip = tooltip[:16380] + "\n..."
+            edge_kind["tooltip"] = tooltip
         edge[-1] = edge_kind
         self.append(edge)
 
@@ -298,7 +385,8 @@ class EdgesContext(list):
         else:
             if rid in config["cluster-resources"]:
                 self.info(path, f"{kind} '{name}' provided by Kubernetes cluster")
-            elif not config.get("nodes", {}).get(f"{kind}/{api_version}", {}).get("show", True):
+            elif not (get_node_config_of_resource_type(f"{kind}/{api_version}") or {}) \
+                        .get("show", True):
                 self.info(path, f"{kind} '{name}' hidden")
             else:
                 self.warning(path, f"{kind} '{name}' undefined")
@@ -621,14 +709,14 @@ class EdgesContext(list):
             Add selector edges for ingress and egress rules.
         """
         selected_nodes = [e[0] for e in self]
-        for _, ingress_rule in enumerate(query_path(self.resource, "spec.ingress", [])):
-            for _, ingress_from in enumerate(query_path(ingress_rule, "from", [])):
+        for ridx, ingress_rule in enumerate(query_path(self.resource, "spec.ingress", [])):
+            for fidx, ingress_from in enumerate(query_path(ingress_rule, "from", [])):
                 if "podSelector" not in ingress_from:
                     continue # skip this ingress_from item
                 current_index = len(self)
                 self.add_all_workload_resources(
-                    "spec.ingress[{ridx}].from[{fidx}]",
-                    query_path(ingress_from, "podSelector.matchLabels"),
+                    f"spec.ingress[{ridx}].from[{fidx}]",
+                    query_path(ingress_from, "podSelector.matchLabels", {}),
                     edge_kind="INVISIBLE"
                 )
                 ports = [
@@ -651,7 +739,7 @@ class EdgesContext(list):
                 current_index = len(self)
                 self.add_all_workload_resources(
                     "spec.egress",
-                    query_path(egress_to, "podSelector.matchLabels"),
+                    query_path(egress_to, "podSelector.matchLabels", {}),
                     edge_kind="INVISIBLE"
                 )
                 ports = [
@@ -802,10 +890,17 @@ parser.add_argument("filename", nargs='+',
 parser.add_argument("-o", "--output", type=str,
     help="output diagram filename")
 parser.add_argument("-f", "--format", type=str,
-    help="output format, allowed formats are png (default), jpg, svg, pdf, and dot",
+    help="output format, allowed formats are " \
+        + ", ".join(SUPPORTED_OUTPUT_FORMATS) \
+        + ", set to png by default",
     default="png")
+parser.add_argument("--embed-all-icons",
+    help="embed all icons into svg or dot_json output diagrams",
+    action="store_true", default=False)
 parser.add_argument("-c", "--config", type=str,
     help="custom kube-diagrams configuration file")
+parser.add_argument("-n", "--namespace", type=str,
+    help="visualize only the resources inside a given namespace")
 parser.add_argument("-v", "--verbose",
     help="verbosity, set to false by default",
     action="store_true", default=False)
@@ -823,12 +918,14 @@ else:
         args.format = args.output[dot_idx+1:]
         args.output = args.output[:dot_idx]
 
-SUPPORTED_OUTPUT_FORMATS = ["png", "jpg", "svg", "pdf", "dot"]
-SOF = "' or '".join(SUPPORTED_OUTPUT_FORMATS)
 if args.format not in SUPPORTED_OUTPUT_FORMATS:
+    SOF = "' or '".join(SUPPORTED_OUTPUT_FORMATS)
     print(f"Error: '{args.format}' output format unsupported,"
             f" use '{SOF}' instead!", file=sys.stderr)
     sys.exit(1)
+
+if args.embed_all_icons and args.format not in ('svg', 'dot_json'):
+    print("Warning: --embed-all-icons only works with svg or dot_json output format!")
 
 if args.config is not None:
     with open(args.config, encoding="utf-8") as f:
@@ -839,7 +936,27 @@ if args.config is not None:
             if custom_config.get("edges"):
                 config["edges"].update(custom_config["edges"])
             if custom_config.get("clusters"):
-                config["clusters"].extend(custom_config["clusters"])
+                for cluster_custom_config in custom_config["clusters"]:
+                    if "label" in cluster_custom_config:
+                        cluster_label = cluster_custom_config["label"]
+                        for config_cluster in config["clusters"]:
+                            if config_cluster.get("label") == cluster_label:
+                                config_cluster.update(cluster_custom_config)
+                                cluster_label = None
+                                break
+                        if cluster_label is not None:
+                            config["clusters"].append(cluster_custom_config)
+                    elif "annotation" in cluster_custom_config:
+                        cluster_annotation = cluster_custom_config["annotation"]
+                        for config_cluster in config["clusters"]:
+                            if config_cluster.get("annotation") == cluster_annotation:
+                                config_cluster.update(cluster_custom_config)
+                                cluster_annotation = None
+                                break
+                        if cluster_annotation is not None:
+                            config["clusters"].append(cluster_custom_config)
+                    else:
+                        print("ISSUE on", cluster_custom_config)
             if custom_config.get("nodes"):
                 for k, v in custom_config["nodes"].items():
                     previous = config["nodes"].get(k)
@@ -881,21 +998,28 @@ def update_resource_labels(resource, recommended_labels):
 
 # ALGO 1 END
 
-def process_clusters(cluster, resource, clusters):
+def process_clusters(cluster, resource, cluster_configs):
         """
             Process a resource.
         """
-
-        for cluster_config in clusters:
-            if "label" in cluster_config:
-
+        for cluster_config in cluster_configs:
+            if cluster_config.get("show", True) is False:
+                continue # skip this cluster
+            if "annotation" in cluster_config:
+                annotation = cluster_config["annotation"]
+                annotations = query_path(resource, "metadata.annotations")
+                if isinstance(annotations, dict) and annotation in annotations:
+                    cluster_config_title = cluster_config['title']
+                    cluster_name = cluster_config_title.format(annotations[annotation])
+                    cluster = cluster.get_or_create_cluster(cluster_name)
+                    cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
+                    cluster_configs.remove(cluster_config)
+                    return process_clusters(cluster, resource, cluster_configs)
+            elif "label" in cluster_config:
                 label = cluster_config["label"]
                 labels = query_path(resource, "metadata.labels")
-
                 if isinstance(labels, dict) and label in labels:
-
                     cluster_config_title = cluster_config['title']
-                            
                     if cluster_config_title.find("{") == -1:
                         metadata_label_value = labels[label]
                         if metadata_label_value is not None:
@@ -905,18 +1029,18 @@ def process_clusters(cluster, resource, clusters):
                     else:
                         cluster_name = cluster_config_title.format(labels[label])
                     cluster = cluster.get_or_create_cluster(cluster_name)
-                    #print(f"Cluster: {cluster.name} for resource {get_name(resource)} : resource labels {labels}")
-                    #cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
-                    clusters.remove(cluster_config)
-                    return process_clusters(cluster, resource, clusters)
-
+                    cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
+                    cluster_configs.remove(cluster_config)
+                    return process_clusters(cluster, resource, cluster_configs)
         return cluster
 
+# pylint: disable-next=too-many-statements
 def process_resource(resource):
     """
         Process a resource.
     """
-    #CHANGE: function to change recommended labels  
+
+    #CHANGE: apply algo 1
     clusters = copy.deepcopy(config.get("clusters", []))
     recommended_labels = {}
     for cluster_config in clusters:
@@ -928,21 +1052,42 @@ def process_resource(resource):
 
     #END OF CHANGE
 
+
     cluster = resource_cluster
     name = get_name(resource)
-    if get_node_config(resource).get("scope") == "Cluster":
-        rid = name + "/" + get_type(resource)
-        resources[rid] = resource
+    resource_scope = get_node_config(resource).get("scope")
+    # Namespace filter
+    if args.namespace is not None and \
+        ( resource_scope != "Namespaced" \
+            or get_namespace(resource) != args.namespace):
+        return # skip this resource
 
-        if not(args.without_namespace) and resource.get("kind") == "Namespace":
-            cluster = resource_cluster.get_or_create_cluster(f"Namespace: {name}")
+    if resource_scope == "Outside":
+        rid = name + "/" + get_type(resource)
+    elif resource_scope == "Cluster":
+        rid = name + "/" + get_type(resource)
+#TBR: commented to avoid to create a cluster
+#        if not(args.without_namespace) and resource.get("kind") == "Namespace":
+#            cluster = resource_cluster.get_or_create_cluster(f"Namespace: {name}")
     else: # scope = Namespaced
         rid = name + "/" + get_namespace(resource) + "/" + get_type(resource)
-        resources[rid] = resource
         if not args.without_namespace:
             cluster = resource_cluster.get_or_create_cluster(
                         f"Namespace: {get_namespace(resource)}"
                     )
+            
+            cluster.graph_attr.update({
+                "style": "rounded,dashed",
+                "bgcolor": "white",
+                "pencolor": "black",
+                "label": icon(Namespace, get_namespace(resource))
+            })
+            
+
+    if rid not in resources:
+        resources[rid] = resource
+    else:
+        error(resource, None, f"Already declared in {resources[rid].filename}")
 
     cluster = process_clusters(
                 cluster,
@@ -950,8 +1095,6 @@ def process_resource(resource):
                 copy.deepcopy(config.get("clusters", []))
             )
     cluster.resources[rid] = resource
-
-    
     nodes_script = get_node_config(resource).get("nodes")
     if nodes_script is not None:
         nodes = []
@@ -966,7 +1109,7 @@ def process_resource(resource):
             pprint(resource)
             raise
         for node in nodes:
-            process_resource(node)
+            process_resource(Resource(node, resource.filename))
 
 for filename in args.filename:
     try:
@@ -977,9 +1120,9 @@ for filename in args.filename:
                     continue # Skip empty YAML content
                 if yaml_data.get("kind") == "List":
                     for r in yaml_data["items"]:
-                        process_resource(r)
+                        process_resource(Resource(r, filename))
                 else:
-                    process_resource(yaml_data)
+                    process_resource(Resource(yaml_data, filename))
     except FileNotFoundError:
         print(f"Error: file '{filename}' not found!")
         if len(args.filename) == 1:
@@ -988,58 +1131,56 @@ for filename in args.filename:
         print("Error: " + str(error).replace('\n', ' ') + "!")
     except yaml.constructor.ConstructorError as error:
         print("Error: " + str(error).replace('\n', ' ') + "!")
+                
 
-# ALGO 3 : Warning cluster
-
-def warning_cluster(cluster):
-
-    new_warning_cluster = cluster.get_or_create_cluster("Warning")
-    new_warning_cluster.graph_attr.update({
-        "label": "Warning",
-        "style": "filled",
-        "fillcolor": "#ff7f00"
-    })
-
-    for resource_id, resource in list(cluster.resources.items()):
-        del cluster.resources[resource_id]
-        new_warning_cluster.resources[resource_id] = resource
-
-    for sub_cluster in cluster.clusters.values():
-        if sub_cluster.name.startswith("Namespace:"):
-            for resource_id, resource in list(sub_cluster.resources.items()):
-                del sub_cluster.resources[resource_id]
-                new_warning_cluster.resources[resource_id] = resource
-            break
-
-# ALGO 3 END  
+# Print loaded Kubernetes resources
+if args.verbose:
+    print("Loaded Kubernetes resources:")
+    resource_cluster.display()
 
 new_resource_cluster = ResourceCluster("ROOT") # Clustering resources
 
-def reprocess_resources1(resource, rid):
+def reprocess_one_resource(resource):
     """
         Process a resource.
     """
 
     cluster = new_resource_cluster
     name = get_name(resource)
-    if get_node_config(resource).get("scope") == "Cluster":
-        rid = name + "/" + get_type(resource)
-        resources[rid] = resource
+    resource_scope = get_node_config(resource).get("scope")
 
-        if not(args.without_namespace) and resource.get("kind") == "Namespace":
-            cluster = new_resource_cluster.get_or_create_cluster(f"Namespace: {name}")
+    # Namespace filter
+    if args.namespace is not None and \
+        ( resource_scope != "Namespaced" \
+            or get_namespace(resource) != args.namespace):
+        return # skip this resource
+
+    if resource_scope == "Outside":
+        rid = name + "/" + get_type(resource)
+    elif resource_scope == "Cluster":
+        rid = name + "/" + get_type(resource)
+#TBR: commented to avoid to create a cluster
+#        if not(args.without_namespace) and resource.get("kind") == "Namespace":
+#            cluster = resource_cluster.get_or_create_cluster(f"Namespace: {name}")
     else: # scope = Namespaced
         rid = name + "/" + get_namespace(resource) + "/" + get_type(resource)
-        resources[rid] = resource
         if not args.without_namespace:
-            cluster = new_resource_cluster.get_or_create_cluster(
+            cluster = resource_cluster.get_or_create_cluster(
                         f"Namespace: {get_namespace(resource)}"
                     )
+            
+            cluster.graph_attr.update({
+                "style": "rounded,dashed",
+                "bgcolor": "white",
+                "pencolor": "black",
+                "label": icon(Namespace, get_namespace(resource))
+            })
+            
 
-
-    #for resource_id, resource in resources.items():
-
-        #print(f"Reprocessing resource {resource_id} : {resource}")
+    if rid not in resources:
+        resources[rid] = resource
+    #else:
+        #error(resource, None, f"Already declared in {resources[rid].filename}")
 
     cluster = process_clusters(
                 cluster,
@@ -1047,54 +1188,33 @@ def reprocess_resources1(resource, rid):
                 copy.deepcopy(config.get("clusters", []))
             )
     cluster.resources[rid] = resource
+    nodes_script = get_node_config(resource).get("nodes")
+    if nodes_script is not None:
+        nodes = []
+        try:
+            # pylint: disable-next=exec-used
+            exec(nodes_script)
+        except Exception as exc:
+            print("Error:", type(exc), ":", exc.args)
+            traceback.print_exc()
+            print("Nodes script:\n", nodes_script)
+            print("Resource:")
+            pprint(resource)
+            raise
+        for node in nodes:
+            process_resource(Resource(node, resource.filename))
 
 def reprocess_resources():
 
-    for resource_id, resource in resources.items():
-        reprocess_resources1(resource, resource_id)
+    new_resources_dict = resources.copy()  # Create a copy of the resources dict
 
+    for resource_id, resource in new_resources_dict.items():
+        reprocess_one_resource(resource)
 
-def draw_resource(resource):
-    """
-        Draw all resources.
-    """
-
-    cluster = resource_cluster
-
-    def draw_clusters(cluster, resource, clusters):
-        """
-            Draw cluster?
-        """
-
-        for cluster_config in clusters:
-            if "label" in cluster_config:
-
-                label = cluster_config["label"]
-                labels = query_path(resource, "metadata.labels")
-
-                if isinstance(labels, dict) and label in labels:
-
-                    cluster.graph_attr.update(cluster_config.get("graph_attr", {}))
-                    clusters.remove(cluster_config)
-                    draw_clusters(cluster, resource, clusters)
-    
-    draw_clusters(
-                cluster,
-                resource,
-                copy.deepcopy(config.get("clusters", []))
-            )
-                
-#warning_cluster(resource_cluster)            
-
-# Print loaded Kubernetes resources
-if args.verbose:
-    print("Loaded Kubernetes resources:")
-    resource_cluster.display()
+# CHANGE : PROCESS EDGES
 
 parent_nodes = {}
 child_nodes = {}
-
-# CHANGE : PROCESS EDGES
 
 resource_edges = {}
 
@@ -1177,6 +1297,9 @@ def build_parent_nodes():
                 child_nodes[edge_from].append(edge_to)
             else:
                 child_nodes[edge_from] = [edge_to]
+
+# END OF CHANGE : Process Edges
+
 # ALGO 2 : Parents attract children + Children attract parents (label intersection)
 
 def find_cluster_by_labels(cluster, inter, label_to_title):
@@ -1323,8 +1446,8 @@ def assign_inter_labels_to_resource(resource, intersection_dict):
     if not resource_can_be_moved(resource, intersection_dict):
         return False
     
-    print(f"Assigning intersection labels {intersection_dict} to resource {get_name(resource)}")
-    print(f"Before labels: {query_path(resource, 'metadata.labels', {})}")
+    #print(f"Assigning intersection labels {intersection_dict} to resource {get_name(resource)}")
+    #print(f"Before labels: {query_path(resource, 'metadata.labels', {})}")
 
     
     labels = query_path(resource, "metadata.labels", {})
@@ -1335,8 +1458,8 @@ def assign_inter_labels_to_resource(resource, intersection_dict):
     labels.update(intersection_dict)
     resource["metadata"]["labels"] = labels
 
-    print(f"After labels: {query_path(resource, 'metadata.labels', {})}")
-    print("---")
+    #print(f"After labels: {query_path(resource, 'metadata.labels', {})}")
+    #print("---")
 
     return True
 
@@ -1445,7 +1568,6 @@ def find_unique_nested_cluster_labels(cluster, cluster_names, result=None):
     
 # END OF ALGO 4
 
-
 def create_nodes(cluster):
     """
         Create diagram nodes and clusters recursively.
@@ -1479,7 +1601,10 @@ def create_custom_cluster(cluster_id, cluster_def):
         Create a custom cluster.
     """
     cluster_name = query_path(cluster_def, "name")
-    with Cluster(cluster_name, graph_attr={"tooltip":cluster_name}):
+    with Cluster(cluster_name, graph_attr={
+            "tooltip": cluster_name,
+            **cluster_def.get("graph_attr", {})
+         }):
         create_custom_clusters_nodes(cluster_id, cluster_def)
 
 def create_custom_clusters_nodes(container_id, container_def):
@@ -1491,8 +1616,9 @@ def create_custom_clusters_nodes(container_id, container_def):
         create_custom_cluster(prefix_id + cluster_id, cluster_def)
     for node_id, node_def in query_path(container_def, "nodes", {}).items():
         create_custom_node(prefix_id + node_id, node_def)
-    if container_id == generate_diagram_in_cluster: 
+    if container_id == generate_diagram_in_cluster:
         create_nodes(resource_cluster)
+
 
 # Before generating diagram 
 print("---")
@@ -1504,45 +1630,30 @@ collect_edges()
 build_parent_nodes() 
 
 # Algo 2 : Update clusters based on label intersections
-label_intersection(resource_cluster, parent_nodes)
-
-label_intersection(resource_cluster, child_nodes)
+#label_intersection(resource_cluster, parent_nodes)
+#label_intersection(resource_cluster, child_nodes)
 
 reprocess_resources()  # Reprocess resources after label intersection
 resource_cluster = new_resource_cluster # Use the new resource cluster after label intersection
 
 # Algo 4 : Assign labels to resources without labels
-assign_labels_to_no_labels_resources(resource_cluster)
+#assign_labels_to_no_labels_resources(resource_cluster)
 
-new_resource_cluster = ResourceCluster("ROOT") # Clustering resources after label intersection
-reprocess_resources()  # Reprocess resources after label intersection
-resource_cluster = new_resource_cluster # Use the new resource cluster after label intersection
+#new_resource_cluster = ResourceCluster("ROOT") # Clustering resources after label intersection
+#reprocess_resources() 
+#resource_cluster = new_resource_cluster 
 
 # Generate diagram
 generate_diagram_in_cluster = query_path(config, "diagram.generate_diagram_in_cluster")
 with Diagram("", filename=args.output, show=False, direction="TB", outformat=args.format):
-
-    ''' 
-    print("---")
-    print("Clusters before label intersection:")
-    print("---")
-    resource_cluster.display()
-    '''
     # Generate diagram nodes
     diagram_nodes = {}
     create_custom_clusters_nodes(None, query_path(config, "diagram", {}))
-    
-    # Draw resources, edges, and clusters
-    for r in resources.values():
-        draw_resource(r)
-    
-    draw_edges()
 
-    print("---")
-    print("Clusters after label intersection:")
-    print("---")
-    new_resource_cluster.display()
-    
+    # Generate diagram edges
+    #process_edges()
+
+    draw_edges()
 
     # Create custom edges
     for edge_idx, custom_edge in enumerate(query_path(config, "diagram.edges", [])):
@@ -1561,3 +1672,63 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
             _ = from_node >> Edge(**custom_edge, tooltip=edge_tooltip) >> to_node
 
 print(f"{args.output}.{args.format} generated.")
+
+if args.format in ("svg", "dot_json"):
+    filename = f"{args.output}.{args.format}"
+    print("Post-process paths of icons...")
+    # read all the lines of the generated file
+    with open(filename, "rt", encoding="utf-8") as fs:
+        lines = fs.readlines()
+    # compute absolute paths to be replaced by urls
+    from pathlib import Path
+    DIAGRAMS_PATH = str(Path(os.path.abspath(os.path.dirname(diagrams.__file__))).parent)
+    DIAGRAMS_URL = \
+        "https://raw.githubusercontent.com/mingrammer/diagrams/refs/heads/master"
+    KUBEDIAGRAMS_PATH = str(Path(os.path.abspath(os.path.dirname(__file__))).parent)
+    KUBEDIAGRAMS_URL = \
+        "https://raw.githubusercontent.com/philippemerle/KubeDiagrams/refs/heads/main"
+    if args.format == "svg":
+        what_to_search = [
+            r'image xlink:href="([^"]+)"',
+        ]
+    elif args.format == "dot_json":
+        DIAGRAMS_PATH = DIAGRAMS_PATH.replace("/", "\\/")
+        KUBEDIAGRAMS_PATH = KUBEDIAGRAMS_PATH.replace("/", "\\/")
+        what_to_search = [
+            r'"image": "([^"]+)"',
+            r'img src=\\"([^"]+)\\"',
+        ]
+    else:
+        what_to_search = []
+    # rewrite all the lines of the generated file
+    with open(filename, "wt", encoding="utf-8") as fs:
+        for line in lines:
+            for wts in what_to_search:
+                import re
+                img_paths = re.findall(wts, line)
+                for img_path in img_paths:
+                    if not args.embed_all_icons:
+                        # replace absolute paths by urls
+                        if DIAGRAMS_PATH in line:
+                            line = line.replace(DIAGRAMS_PATH, DIAGRAMS_URL)
+                            continue
+                        if KUBEDIAGRAMS_PATH in line:
+                            line = line.replace(KUBEDIAGRAMS_PATH, KUBEDIAGRAMS_URL)
+                            continue
+                    full_img_path = Path(img_path.replace("\\/", "/"))
+                    if full_img_path.exists():
+                        # read the image
+                        with open(full_img_path, 'rb') as img_file:
+                            img_data = img_file.read()
+                        # encode the image in base64
+                        import base64
+                        mime_type = 'image/png'
+                        b64_data = base64.b64encode(img_data).decode('ascii')
+                        data_uri = f"data:{mime_type};base64,{b64_data}"
+                        # replace absolute path by image encoded in base64
+                        line = line.replace(img_path, data_uri)
+                    else:
+                        print(f"Warning: Image not found: {full_img_path}")
+            # write the line
+            fs.write(line)
+    print(f"{filename} saved.")

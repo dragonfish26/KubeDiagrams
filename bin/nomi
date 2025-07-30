@@ -1399,9 +1399,11 @@ def find_unique_nested_cluster(cluster, cluster_names):
 
     non_namespace_clusters = [
         sc for sc in cluster.clusters.values()
-        if not sc.name.startswith("Namespace:")
+        if not sc.name.startswith("Namespace:") 
     ]
     matches = [sc for sc in non_namespace_clusters if sc.name.startswith(cluster_names[0])]
+    print("CLUSTER NAME : ", cluster.name)
+    #print(cluster.name.type())
 
     if len(matches) == 1:
         return find_unique_nested_cluster(matches[0], cluster_names[1:])
