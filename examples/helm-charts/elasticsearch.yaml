@@ -4,11 +4,6 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: "elasticsearch-master-pdb"
-  # CHANGE : +labels
-  labels:
-    release: "elasticsearch"
-    chart: "elasticsearch"
-    app: "elasticsearch-master"
 spec:
   maxUnavailable: 1
   selector:
@@ -22,12 +17,10 @@ type: kubernetes.io/tls
 metadata:
   name: elasticsearch-master-certs
   labels:
-    #CHANGE : add app
-    app: middle
-    #app: elasticsearch-master
-    #chart: "elasticsearch"
+    app: elasticsearch-master
+    chart: "elasticsearch"
     heritage: Helm
-    #release: elasticsearch
+    release: elasticsearch
 data:
   tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoekNDQW0rZ0F3SUJBZ0lRSkdpcWxaNjNqcmZkeklZWk50K0RXakFOQmdrcWhraUc5dzBCQVFzRkFEQWIKTVJrd0Z3WURWUVFERXhCbGJHRnpkR2xqYzJWaGNtTm9MV05oTUI0WERUSTFNRE13TlRFeE16SXhPRm9YRFRJMgpNRE13TlRFeE16SXhPRm93SHpFZE1Cc0dBMVVFQXhNVVpXeGhjM1JwWTNObFlYSmphQzF0WVhOMFpYSXdnZ0VpCk1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRRHB5a2MzdkdrNERsUlFqdlhiY2hlZUQzUXgKa1dlcjJqcHJ5b2M2U29WZkVMcmE2S2xrNWhzeUh0OXdnZmh2RGwxR0hrV3YyV1VoTnF6cUJpNGFVamovM1AyWgpZK3BJdVR6R3JzS2hHYmF4ekxBU21kUkh5b2NadTNITjYvVm1pQXhnakpaQll2eHZKMkdGa3FLbnN1ZjVZeFdDClk5OHpaSXdWd3phRkVUUEk0amdxbHNqNE5VNGg2OUdocU5CaVpVa0RyTmZqNkNMeDNqN3c5MjR4MUMzeCtBUkEKSDBRVkxiMHh5WGVSS3g3QldaOVN1V2c5M2NqZnpneHFNLzUycFVkRVA4ZWhhblZRd25xZVJQcFJKYU5ZWjlGNQpMSVZXUUpENCtsbXdmbjBBVWlibkxSVzZDYXpsYUFuY1RrMWN5YVZzQnNqZzA1aUVCaFlGaEF2N0dKU2pBZ01CCkFBR2pnY0l3Z2I4d0RnWURWUjBQQVFIL0JBUURBZ1dnTUIwR0ExVWRKUVFXTUJRR0NDc0dBUVVGQndNQkJnZ3IKQmdFRkJRY0RBakFNQmdOVkhSTUJBZjhFQWpBQU1COEdBMVVkSXdRWU1CYUFGSnVDN1JSUGc2Q3lYUkVFdDBrVwo2eDFzUWovQ01GOEdBMVVkRVFSWU1GYUNGR1ZzWVhOMGFXTnpaV0Z5WTJndGJXRnpkR1Z5Z2h4bGJHRnpkR2xqCmMyVmhjbU5vTFcxaGMzUmxjaTVrWldaaGRXeDBnaUJsYkdGemRHbGpjMlZoY21Ob0xXMWhjM1JsY2k1a1pXWmgKZFd4MExuTjJZekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBSzNTV284RU16eWJEd3pQR1VHMEh1NXUrNmhvOAp3WDNjZWtpdTJYQzFZZVRMTXNmMmk1RHZvZ1JmOFVXVVRwZmt4SGwvTmlVS3Zwcm1xREdRUGdkQmdMUDlRVVFqCnRDVDNuOUdGSzRsNkJBU0wrTXdxWk1HK2dCRytQTjBtaFJ1MUJzMEFHaWthK1lTcC9pc00wYWwwRzd3bUNSaWgKbHNoY2RLb3BvNHR3SjVleEtpNTYrQUtSNEVoMzY1Wk9rK3BQdVlwZ3dBL3hQV2hxdzZhTEw2a1B3ZXhPYUJ6SwphcStBRXBlMGhaWkRlWnNKNFdyQW5oQVFYc1VxaVhUSlhiTW1MejdDRE9TU05iS3BsV1l2Z3FtWkZ6TC9mRXFpCjZWQWJNL2V5RVU0MU5JVG15b1FJemR0dW94aWNDOHY1WFZuMitWVDF4Zk83WTltUXZLNjEwMEJrMWc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
   tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcFFJQkFBS0NBUUVBNmNwSE43eHBPQTVVVUk3MTIzSVhuZzkwTVpGbnE5bzZhOHFIT2txRlh4QzYydWlwClpPWWJNaDdmY0lINGJ3NWRSaDVGcjlsbElUYXM2Z1l1R2xJNC85ejltV1BxU0xrOHhxN0NvUm0yc2N5d0VwblUKUjhxSEdidHh6ZXYxWm9nTVlJeVdRV0w4YnlkaGhaS2lwN0xuK1dNVmdtUGZNMlNNRmNNMmhSRXp5T0k0S3BiSQorRFZPSWV2Um9halFZbVZKQTZ6WDQrZ2k4ZDQrOFBkdU1kUXQ4ZmdFUUI5RUZTMjlNY2wza1NzZXdWbWZVcmxvClBkM0kzODRNYWpQK2RxVkhSRC9Ib1dwMVVNSjZua1Q2VVNXaldHZlJlU3lGVmtDUStQcFpzSDU5QUZJbTV5MFYKdWdtczVXZ0ozRTVOWE1tbGJBYkk0Tk9ZaEFZV0JZUUwreGlVb3dJREFRQUJBb0lCQVFEaStnTFlwdkNVZnJ6MwpGVVMyei9jRCtzYjVWTTBNK0tzZGVaeCtTRmxpS1hEd0ZWQllhRnJnOXo1QkViNHJ2QXRzaHZsck42bktiRFhHClkwZWhRRkNjZ0dZcDVPcFJ2cDIxMjNlVVJzMnJveWtTZGd5MXduZ1YwSGsxemk4TFkyeDQxQ1VReUZTQ2FmNXgKV3lMVm80azZBeXVmMHV5aERhNC9kcTVZMUpHdEpiRHM1emt5ZllCS1pPcmJLQk9XbW95TjAyUmxFMEZSNkcwcAo1aXphS203Z05OdWFsU3h2Sm5hTGwrTE9VK0JIRWJLSlFORVFoOVF6M1NYb0Njd2lRVXFyVW9PKzIyYjhkQUl6CnlEZVVPU1JrbUJZZzRXTFJ4OTJQMHZIUEpXRUdtMEZSU0lheEpWeHBKK25pRld0Y0EzTWg4SFJyT205SlU4TnoKNkpYSmVEVDVBb0dCQU83aTJTZVhYRHM3Y3ZZa2RIczlzQnNIaDI2UkdxQTZxVDFXUURQWG9hM2ZIYTRUYTUvdAoxcE5Kb3NtbVlTb3FIbVdaRVFPOGo1K0VHVnY3SVNidkhNenE3aW0vcGVHeWh4azhGcVM4ZS9ENTRyRFdjNFk2CnVUZEZMd0kwQUNROGNUZFdIcUUxTkZVMnJwV1pEV3diMkdjcjViZ1VDdzVmYmZGREVINGRxbWZQQW9HQkFQcUoKK0ZzeXpRQVdTVExZalpiK0VPTzE1Nnk2L2N4bml6VllPQVVCQ1ZjWnJIZE9VcE5RY2Nld3NLeU1YaXcvVWErYgp4Q01VRWJDd0xEWHdjTlZBZjFaQ2x2RERjbEptQ0UzWnUyazd4aURFQTMweCtia1RILytwcldTRm5DUENvbUFnCjVUa1M0SU50YWh5UVIvbTQrWVRRODJzTUU2cmJ5emZZRithMTVtYnRBb0dBQU9MQWNXQWpUR2p0QlRLZlovR1QKbkpZTGo0SmtPZUhkek1kc0Y0VWVLVm5oYjByTkpGdXFad05uNGgyRzBMUTFScVVwcGZ6bC8yNXE5YWRadVI0NwoyaHFvNVdpN2dibTZ2SUkzaDBiWG9zNGFaQk4zZkREdGpPSHB5YlZOcHRTK2lyajhCaGIvYWExNU9qN0dDUGVWCmR0UjMxcFhrY0pveit5Z0hnS0ExaUlzQ2dZRUFsbzlEU01zR2x2N05qbGpFL2ZCQWhoZFMybUtsRXFsRzV3L1UKMm16OUIvTE55Z1N2YXdmMDJHUStSL015eExSb2luZTVMcnRveGgyWTgvRkNYV1VkSU9Gemc4eHdiMFFSeVhjSApRUDVDMm4zdyt0T0Zsc3IvZDh5bi9yaXNWSEVxMDBueGRwTDVpUUcvdXRxWjVtQmEwbzRmT2oxUHRHWFJnZ1hDCmwwckk0eUVDZ1lFQXhpdytCSjFSZGxoTTIwUFc1SXgzcVMzeGg3SjczSVV4aVQ4UnZiVGpkTkx5RDVtajlTTHYKUmxTdWswaVpNUGFKa1hvRTQyRmtwdjErRktGVVE1NSs1WGpZT1RVSWhUM056ME5VMm5VUEpkZU1OSlI4bExQNgp0V2dYWlFPS3N6SDAvUjBDYnpxcVJaV1hWZVNHcnRGZDlQUmRURUEzWEdIMHEwVVdKb2NLWFowPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
@@ -40,11 +33,9 @@ metadata:
   name: elasticsearch-master-credentials
   labels:
     heritage: "Helm"
-    # CHANGE : app
-    app: "middle"
-    #release: "elasticsearch"
-    #chart: "elasticsearch"
-    #app: "elasticsearch-master"
+    release: "elasticsearch"
+    chart: "elasticsearch"
+    app: "elasticsearch-master"
 type: Opaque
 data:
   username: ZWxhc3RpYw==
@@ -125,12 +116,6 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: elasticsearch-master
-      #CHANGE : add label
-      labels:
-        #heritage: "Helm"
-        release: "elasticsearch"
-        chart: "elasticsearch"
-        app: "elasticsearch-master"
     spec:
       accessModes:
       - ReadWriteOnce
@@ -324,11 +309,6 @@ metadata:
   annotations:
     "helm.sh/hook": test
     "helm.sh/hook-delete-policy": hook-succeeded
-  #CHANGE : +labels
-  labels:
-    release: "elasticsearch"
-    chart: "elasticsearch"
-    #app: "elasticsearch-master" -> this will result in same (pointed) arrows pointing to a wrong node
 spec:
   securityContext:
     fsGroup: 1000
