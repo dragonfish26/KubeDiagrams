@@ -1372,19 +1372,26 @@ def resource_can_be_moved(resource, intersection_dict):
     if not resource_label_indices:
         return True
 
-    # The resource's strongest label (lowest index)
-    resource_strongest = resource_label_indices[0]
-    # The intersection's weakest label (highest index)
-    intersection_weakest = intersection_label_indices[-1]
+    resource_strongest = resource_label_indices[0]   # The resource's strongest label (lowest index)
+    intersection_weakest = intersection_label_indices[-1]   # The intersection's weakest label (highest index)
 
-    # If the resource's strongest label is stronger (lower index) than the intersection's weakest,
+    # Case 1 : intersection has all resource labels and extra labels are weaker
+    intersection_keys = set(intersection_dict.keys())
+    resource_keys = set(resource_labels.keys())
+
+    if resource_keys.issubset(intersection_keys):
+        extra_keys = intersection_keys - resource_keys
+        extra_indices = [label_to_index[k] for k in extra_keys if k in label_to_index]
+
+        if all(idx > max(resource_label_indices) for idx in extra_indices):
+            return True  # Intersection only adds weaker labels, safe to move
+
+    # Case 2 : If the resource's strongest label is stronger (lower index) than the intersection's weakest,
     # it cannot be nested, so return True (do not move)
     if resource_strongest < intersection_weakest:
         return False
     
-
-    # Otherwise, it's safe to move
-    return True
+    return True #can be moved
 
 def get_label_intersection(resource_id, dict_to_use, resources):
     label_sets = []
@@ -1467,12 +1474,14 @@ def label_intersection(cluster, dict_to_use):
         if not assigned:
             continue # Skip this resource if it was not moved
 
+
         #print("---")
         #print(loop_count, "Resource ID:", resource_id)
         loop_count += 1
 
     for subcluster in list(cluster.clusters.values()):
         label_intersection(subcluster, dict_to_use)
+
         
 # END OF ALGO 2
 
@@ -1482,7 +1491,7 @@ def assign_labels_to_no_labels_resources(cluster):
     # Move resources at the root level (not in any cluster)
     for resource_id, resource in list(cluster.resources.items()):
         compatible_cluster_labels = find_unique_nested_cluster_labels(
-            cluster, ["K8s Instance", "Helm Chart", "K8s Component"])
+            cluster, ["K8s Instance", "Helm Chart", "K8s Application", "K8s Component"])
         
         #print("Compatible cluster (no namespace):", compatible_cluster.name)
         print(f"Assigning labels {compatible_cluster_labels} to resource {get_name(resource)}")
@@ -1498,7 +1507,7 @@ def assign_labels_to_no_labels_resources(cluster):
 
             for resource_id, resource in list(sub_cluster.resources.items()):
                 compatible_cluster_labels = find_unique_nested_cluster_labels(
-                    sub_cluster, ["K8s Instance", "Helm Chart", "K8s Component"])
+                    sub_cluster, ["K8s Instance", "Helm Chart", "K8s Application", "K8s Component"])
                 
                 #print(f"Compatible cluster (namespace):", compatible_cluster.name)
 
@@ -1520,13 +1529,16 @@ def find_unique_nested_cluster_labels(cluster, cluster_names, result=None):
         sc for sc in cluster.clusters.values()
         if not sc.name.startswith("Namespace")
     ]
+
+    print("Non-namespace clusters:", [sc.name for sc in non_namespace_clusters])
+
     matches = [sc for sc in non_namespace_clusters if sc.name.startswith(cluster_names[0])]
     print("Cluster name :", cluster.name)   #Helm Chart: argo-workflows-0.45.20
     
     cluster_labels = {cluster.get("title") : cluster.get("label") for cluster in config.get("clusters", []) if "label" in cluster}
 
-    # Only add if not ROOT
-    if cluster.name != "ROOT":
+    # Only add if not ROOT or Namespace
+    if cluster.name != "ROOT" and not cluster.name.startswith("Namespace:") :
         print(cluster.name)
         parts = cluster.name.split(":")
         cluster_type = cluster_labels[parts[0].strip()]   # e.g. "Helm Chart" -> helm.sh/chart
@@ -1539,9 +1551,172 @@ def find_unique_nested_cluster_labels(cluster, cluster_names, result=None):
     else:
         # Return accumulated result
         return result
-
     
 # END OF ALGO 4
+
+# ALGO 5 : CREATE NEW CLUSTERS FOR NO LABEL RESOURCES USING NAMES
+
+def get_neighbors(resource_id):
+    """
+    Construct a list of neighbors for a given resource_id in the cluster.
+    """
+    neighbors = []
+    resource = resources.get(resource_id)
+    
+    if not resource:
+        return neighbors
+
+    # Check parent nodes
+    for parent_id in parent_nodes.get(resource_id, []):
+        if parent_id in resources:
+            neighbors.append(parent_id)
+
+    # Check child nodes
+    for child_id in child_nodes.get(resource_id, []):
+        if child_id in resources:
+            neighbors.append(child_id)
+
+    return neighbors
+
+def bfs_iterative(cluster, start, visited=None):
+    """
+    Perform a breadth-first search (BFS) on the graph starting from the given node.
+    Returns a list of nodes in the order they were visited.
+    """
+    if visited is None:
+        #visited = [False] * get_no_label_resources(cluster)
+        visited = {resource_id: False for resource_id in get_no_label_resources(cluster)}
+
+    result = []
+    queue = [start]
+
+    while queue:
+        node = queue.pop(0)
+        if not visited[node]:
+            result.append(node)
+            visited[node] = True
+            for neighbor in get_neighbors(node):
+                # neighbor can have existing labels, therefore not in the visited list
+                if neighbor in visited and not visited[neighbor]:
+                    queue.append(neighbor)
+
+    return result
+
+def find_connected_components(cluster):
+    """
+    Find connected components in an undirected graph.
+    Returns a list of lists, where each inner list contains the nodes of a connected component.
+    node = resource_id
+    """
+
+    result = []
+    visited = {resource_id: False for resource_id in get_no_label_resources(cluster)}
+
+    for node in get_no_label_resources(cluster):
+        if not visited[node]:
+            component = bfs_iterative(cluster, node, visited)
+            result.append(component)
+
+    return result
+
+def get_no_label_resources(cluster):
+    """
+    Get a list of resources that do not have any labels.
+    """
+    no_label_resources = []
+
+    for resource_id, resource in cluster.resources.items():
+        print(f"checking: {resource_id} : {resource}")
+        no_label_resources.append(resource_id)
+
+    for sub_cluster in cluster.clusters.values():
+        if sub_cluster.name.startswith("Namespace:"):
+            for resource_id, resource in sub_cluster.resources.items():
+                    no_label_resources.append(resource_id)
+
+    return no_label_resources
+
+
+def print_connected_components(cluster):
+    """
+    Print the connected components of the graph.
+    """
+    components = find_connected_components(cluster)
+    print("Connected components:")
+    for idx, component in enumerate(components):
+        print(f"Component {idx + 1}:")
+        for resource_id in component:
+            print(f"  {resource_id}, ")
+
+
+def create_name_for_component(component):
+    '''
+    Create a name for a connected component based on the common prefix of the resource names.
+    '''
+    name = ""
+
+    for resource_id in component:
+        resource = resources.get(resource_id)
+        if resource is None:
+            continue
+
+        if name == "":
+            name = get_name(resource)
+        else:
+            name = common_prefix(name, get_name(resource))
+
+    new_cluster_label = {'app.kubernetes.io/component': name}
+    #'app.kubernetes.io/name': 'fission-all'
+
+    for resource_id in component:
+        resources[resource_id]["metadata"]["labels"] = new_cluster_label
+
+    return name
+
+       
+
+def create_clusters_for_connected_components(cluster):
+    """
+    Create clusters for each connected component in the graph.
+    Each cluster will contain resources that are connected to each other.
+    +
+    Find a common cluster name for each component based on the common prefix of the component names.
+    """
+
+    component_names = []
+
+    components = find_connected_components(cluster)
+    for component in components:
+        if len(component) > 1:  # Only create clusters for components with more than one resource
+            n = create_name_for_component(component)
+            component_names.append(n)
+
+    name = ""
+
+    for cn in component_names:
+        if name == "":
+            name = cn
+        else:
+            name = common_prefix(name, cn)
+
+    new_cluster_label = {'app.kubernetes.io/name': name}
+    #'app.kubernetes.io/name': 'fission-all'
+
+    for component in components:
+        for resource_id in component:   
+            resources[resource_id]["metadata"]["labels"].update(new_cluster_label)
+
+
+def common_prefix(s1, s2):
+    result = []
+    for a, b in zip(s1, s2):
+        if a == b:
+            result.append(a)
+        else:
+            break
+    return ''.join(result)
+
+# END OF ALGO 5
 
 def create_nodes(cluster):
     """
@@ -1613,12 +1788,6 @@ label_intersection(resource_cluster, child_nodes)
 reprocess_resources()  # Reprocess resources after label intersection
 resource_cluster = new_resource_cluster # Use the new resource cluster after label intersection
 
-print("---")
-print("Clusters after resource reprocessing:")
-
-new_resource_cluster.display()
-print("---")
-
 
 # Algo 4 : Assign labels to resources without labels
 assign_labels_to_no_labels_resources(resource_cluster)
@@ -1627,6 +1796,21 @@ new_resource_cluster = ResourceCluster("ROOT")
 reprocess_resources() 
 resource_cluster = new_resource_cluster 
 
+# Algo 5 : Create clusters for connected components
+
+
+create_clusters_for_connected_components(resource_cluster)
+
+new_resource_cluster = ResourceCluster("ROOT") 
+reprocess_resources() 
+resource_cluster = new_resource_cluster 
+
+print("---")
+print("Clusters after resource reprocessing:")
+
+new_resource_cluster.display()
+print("---")
+
 # Generate diagram
 generate_diagram_in_cluster = query_path(config, "diagram.generate_diagram_in_cluster")
 with Diagram("", filename=args.output, show=False, direction="TB", outformat=args.format):
@@ -1634,10 +1818,7 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
     diagram_nodes = {}
     create_custom_clusters_nodes(None, query_path(config, "diagram", {}))
 
-
     draw_edges()
-
-    print("Resouce_edges have changed:" , resource_edges != resource_edges_copy)
 
     # Create custom edges
     for edge_idx, custom_edge in enumerate(query_path(config, "diagram.edges", [])):
