@@ -112,6 +112,7 @@ nodes:
     edges: |
       for idx, clusterRoleSelector in enumerate(query_path(resource, "aggregationRule.clusterRoleSelectors", [])):
         edges.add_all_resources_matching_labels("ClusterRole", "matchLabels", data=clusterRoleSelector)
+      edges.add_rules_resource_names()
   ClusterRole/rbac.authorization.k8s.io/v1beta1: ClusterRole/rbac.authorization.k8s.io/v1
   ClusterRoleBinding/rbac.authorization.k8s.io/v1:
     scope: Cluster
@@ -131,7 +132,9 @@ nodes:
       edges.add_owned_resources()
       edges.add_service_account("spec.jobTemplate.spec.template.spec")
       edges.add_all_volume_resources("spec.jobTemplate.spec.template.spec.volumes")
-      edges.add_containers_env_value_from("spec.jobTemplate.spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.jobTemplate.spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.jobTemplate.spec.template.spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("spec.jobTemplate.spec.template.spec.ephemeralContainers")
       edges.add_wait_for_services("spec.jobTemplate.spec.template.spec.initContainers")
       edges.add_networks("spec.jobTemplate.spec.template.metadata.annotations")
       edges.add_priority_class("spec.jobTemplate.spec.template.spec.priorityClassName")
@@ -186,7 +189,9 @@ nodes:
       edges.add_owned_resources()
       edges.add_service_account("spec.template.spec")
       edges.add_all_volume_resources("spec.template.spec.volumes")
-      edges.add_containers_env_value_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.ephemeralContainers")
       edges.add_wait_for_services("spec.template.spec.initContainers")
       edges.add_networks("spec.template.metadata.annotations")
       edges.add_priority_class("spec.template.spec.priorityClassName")
@@ -207,7 +212,9 @@ nodes:
       edges.add_owned_resources()
       edges.add_service_account("spec.template.spec")
       edges.add_all_volume_resources("spec.template.spec.volumes")
-      edges.add_containers_env_value_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.ephemeralContainers")
       edges.add_wait_for_services("spec.template.spec.initContainers")
       edges.add_networks("spec.template.metadata.annotations")
       edges.add_priority_class("spec.template.spec.priorityClassName")
@@ -224,6 +231,7 @@ nodes:
   Deployment/apps/v1beta2: Deployment/apps/v1
   Endpoints/v1:
     scope: Namespaced
+    plural: endpoints
     diagram_node_classname: diagrams.k8s.network.Endpoint
     edges: |
         for sidx, subset in enumerate(resource.get("subsets", [])):
@@ -231,7 +239,7 @@ nodes:
             if "targetRef" in address:
               target = address["targetRef"]
               edges.add_edge_to(
-                f"subjects[{sidx}].addresses[{aidx}].targetRef",
+                f"subsets[{sidx}].addresses[{aidx}].targetRef",
                 target["name"],
                 target["namespace"],
                 target["kind"],
@@ -284,6 +292,15 @@ nodes:
         "networking.k8s.io/v1",
         "REFERENCE"
       )
+      for idx, tls in enumerate(query_path(resource, "spec.tls", [])):
+        edges.add_edge_to(
+          f"spec.tls[{idx}]",
+          tls.get("secretName"),
+          get_namespace(resource),
+          "Secret",
+          "v1",
+          "REFERENCE"
+        )
   Ingress/networking.k8s.io/v1beta1: Ingress/networking.k8s.io/v1
   Ingress/extensions/v1beta1: Ingress/networking.k8s.io/v1
   IngressClass/networking.k8s.io/v1:
@@ -302,7 +319,9 @@ nodes:
       edges.add_owned_resources()
       edges.add_service_account("spec.template.spec")
       edges.add_all_volume_resources("spec.template.spec.volumes")
-      edges.add_containers_env_value_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.ephemeralContainers")
       edges.add_wait_for_services("spec.template.spec.initContainers")
       edges.add_networks("spec.template.metadata.annotations")
       edges.add_priority_class("spec.template.spec.priorityClassName")
@@ -368,14 +387,15 @@ nodes:
     scope: Namespaced
     diagram_node_classname: diagrams.k8s.storage.PVC
     edges: |
-      edges.add_edge_to(
-        "spec.storageClassName",
-        ".",
-        None,
-        "StorageClass",
-        "storage.k8s.io/v1",
-        "REFERENCE"
-      )
+      if query_path(resource, "spec.storageClassName") != "":
+        edges.add_edge_to(
+          "spec.storageClassName",
+          ".",
+          None,
+          "StorageClass",
+          "storage.k8s.io/v1",
+          "REFERENCE"
+        )
       edges.add_edge_to(
           "spec.volumeName",
           ".",
@@ -395,7 +415,9 @@ nodes:
     edges: |
       edges.add_service_account("spec")
       edges.add_all_volume_resources("spec.volumes")
-      edges.add_containers_env_value_from("spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("spec.ephemeralContainers")
       edges.add_wait_for_services("spec.initContainers")
       edges.add_edge_to(
         "spec.nodeName",
@@ -426,6 +448,7 @@ nodes:
   PodDisruptionBudget/policy/v1beta1: PodDisruptionBudget/policy/v1
   PodSecurityPolicy/policy/v1:
     scope: Namespaced
+    plural: podsecuritypolicies
     diagram_node_classname: diagrams.k8s.others.PSP
     # no edges
   PodSecurityPolicy/policy/v1beta1: PodSecurityPolicy/policy/v1
@@ -436,7 +459,9 @@ nodes:
     edges: |
       edges.add_service_account("template.spec")
       edges.add_all_volume_resources("template.spec.volumes")
-      edges.add_containers_env_value_from("template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("template.spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("template.spec.ephemeralContainers")
       edges.add_wait_for_services("template.spec.initContainers")
       edges.add_edge_to(
         "template.spec.nodeName",
@@ -463,7 +488,9 @@ nodes:
       edges.add_owned_resources()
       edges.add_service_account("spec.template.spec")
       edges.add_all_volume_resources("spec.template.spec.volumes")
-      edges.add_containers_env_value_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.ephemeralContainers")
       edges.add_wait_for_services("spec.template.spec.initContainers")
       edges.add_networks("spec.template.metadata.annotations")
       edges.add_priority_class("spec.template.spec.priorityClassName")
@@ -482,7 +509,9 @@ nodes:
       edges.add_owned_resources()
       edges.add_service_account("spec.template.spec")
       edges.add_all_volume_resources("spec.template.spec.volumes")
-      edges.add_containers_env_value_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.ephemeralContainers")
       edges.add_wait_for_services("spec.template.spec.initContainers")
       edges.add_networks("spec.template.metadata.annotations")
       edges.add_priority_class("spec.template.spec.priorityClassName")
@@ -501,7 +530,10 @@ nodes:
   Role/rbac.authorization.k8s.io/v1:
     scope: Namespaced
     diagram_node_classname: diagrams.k8s.rbac.Role
-    # no edges
+    nodes: |
+      create_node_for_role_rules_resource_names(resource, nodes)
+    edges: |
+      edges.add_rules_resource_names()
   Role/rbac.authorization.k8s.io/v1beta1: Role/rbac.authorization.k8s.io/v1
   RoleBinding/rbac.authorization.k8s.io/v1:
     scope: Namespaced
@@ -549,7 +581,9 @@ nodes:
       edges.add_owned_resources()
       edges.add_service_account("spec.template.spec")
       edges.add_all_volume_resources("spec.template.spec.volumes")
-      edges.add_containers_env_value_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.containers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.initContainers")
+      edges.add_containers_env_value_from_and_env_from("spec.template.spec.ephemeralContainers")
       edges.add_wait_for_services("spec.template.spec.initContainers")
       edges.add_networks("spec.template.metadata.annotations")
       edges.add_priority_class("spec.template.spec.priorityClassName")

@@ -107,6 +107,12 @@ def get_edge_config(edge_kind):
 
 __REPORT_REENTRANCE__ = True
 
+REPORT_COLORS = {
+    "Info": "\33[0m",
+    "Warning": "\33[33m",
+    "Error": "\33[31m"
+}
+
 def report(kind, resource, path, msg, end):
     """
         Report.
@@ -116,12 +122,13 @@ def report(kind, resource, path, msg, end):
     if not __REPORT_REENTRANCE__:
         return
     __REPORT_REENTRANCE__ = False
-    rm = f"[{kind}] " \
+    rm = f"{REPORT_COLORS[kind]}[{kind}] " \
         + query_path(resource, "kind", "NO-KIND") + ":" \
         + get_name(resource)
     if path is not None:
         rm += f":{path}"
-    rm += f" - {msg}{end}"
+
+    rm += f" - {msg}{end}\33[0m"
     # GOOD: it is fine to log data that is not sensitive
     print(rm)
     __REPORT_REENTRANCE__ = True
@@ -182,6 +189,12 @@ class Resource(dict):
         """
         dict.__init__(self, data)
         self.filename = fn
+
+    def get_metadata_annotation(self, key):
+        """
+            Get a metadata annotation.
+        """
+        return query_path(self, "metadata.annotations", {}).get(key)
 
 def get_type(resource):
     """
@@ -468,7 +481,7 @@ class EdgesContext(list):
                     config_map_id = f"{config_name}/{self.namespace}/ConfigMap/v1"
                     if config_map.get("optional") is True:
                         if config_map_id not in resources:
-                            self.warning(
+                            self.info(
                                 f"{path}[{idx}].configMap",
                                 f"ConfigMap '{config_name}' undefined but optional"
                             )
@@ -492,7 +505,7 @@ class EdgesContext(list):
                     secret_id = f"{secret_name}/{self.namespace}/Secret/v1"
                     if secret.get("optional") is True:
                         if secret_id not in resources:
-                            self.warning(
+                            self.info(
                                 f"{path}[{idx}].secret",
                                 f"Secret '{secret_name}' undefined but optional"
                             )
@@ -523,33 +536,76 @@ class EdgesContext(list):
         if volumes is not None:
             add_volumes(volumes, path)
 
-    def add_containers_env_value_from(self, path):
+
+    def add_containers_env_value_from_and_env_from(self, path):
         """
-            Add edges to resources referenced from containers.env.valueFrom.
+            Add edges to resources referenced from containers.env.valueFrom and envFrom.
         """
         containers = query_path(self.resource, path)
         if containers is None:
             return
         target_resources = set()
-        for container in containers:
-            for env in query_path(container, "env", []):
-                config_map_key_ref_name = query_path(env, "valueFrom.configMapKeyRef.name")
-                if config_map_key_ref_name is not None:
-                    target_resources.add(
-                        f"{config_map_key_ref_name}/{self.namespace}/ConfigMap/v1"
+
+        def process_optional_resource(
+            path,
+            context,
+            kind,
+            name_path,
+            optional_path
+        ):
+            resource_name = query_path(context, name_path)
+            if resource_name is not None:
+                resource_id = f"{resource_name}/{self.namespace}/{kind}/v1"
+                if query_path(context, optional_path) is True:
+                    if resource_id not in resources:
+                        self.info(
+                            f"{path}.{name_path}",
+                            f"{kind} '{resource_name}' undefined but optional"
+                        )
+                        return
+                target_resources.add(
+                    resource_id
+                )
+
+
+        for cidx, container in enumerate(containers):
+            container_env = query_path(container, "env")
+
+
+            if isinstance(container_env, list):
+                for eidx, env in enumerate(container_env):
+                    process_optional_resource(
+                        f"{path}[{cidx}].env[{eidx}]",
+                        env,
+                        "ConfigMap",
+                        "valueFrom.configMapKeyRef.name",
+                        "valueFrom.configMapKeyRef.optional"
                     )
-                secret_key_ref_name = query_path(env, "valueFrom.secretKeyRef.name")
-                if secret_key_ref_name is not None:
-                    secret_id = f"{secret_key_ref_name}/{self.namespace}/Secret/v1"
-                    if query_path(env, "valueFrom.secretKeyRef.optional") is True:
-                        if secret_id not in resources:
-                            self.warning(
-                                path,
-                                f"Secret '{secret_key_ref_name}' undefined but optional"
-                            )
-                            continue # skip it
-                    target_resources.add(
-                        secret_id
+
+
+                process_optional_resource(
+                        f"{path}[{cidx}].env[{eidx}]",
+                        env,
+                        "Secret",
+                        "valueFrom.secretKeyRef.name",
+                        "valueFrom.secretKeyRef.optional"
+                    )
+            container_env_from = query_path(container, "envFrom")
+            if isinstance(container_env_from, list):
+                for eidx, env_from in enumerate(container_env_from):
+                    process_optional_resource(
+                        f"{path}[{cidx}].envFrom[{eidx}]",
+                        env_from,
+                        "ConfigMap",
+                        "configMapRef.name",
+                        "configMapRef.optional"
+                    )
+                    process_optional_resource(
+                        f"{path}[{cidx}].envFrom[{eidx}]",
+                        env_from,
+                        "Secret",
+                        "secretRef.name",
+                        "secretRef.optional"
                     )
         for target_resource in target_resources:
             self.add_edge_to_rid(path, target_resource, "REFERENCE")
@@ -598,6 +654,10 @@ class EdgesContext(list):
             service_account_name = pod_spec.get("serviceAccount")
             if service_account_name is not None:
                 self.warning(f"{path}.serviceAccount", "Deprecated")
+        # If << serviceAccountName: "" >> then no service account defined
+        if service_account_name == "":
+            return
+        # else add an edge to the ServiceAccount resource
         self.add_edge_to(
             f"{path}.serviceAccountName",
             service_account_name,
@@ -872,6 +932,10 @@ class EdgesContext(list):
         """
             Add a reference edge to a priority class resource.
         """
+        # If << priorityClassName: "" >> then no priority class defined
+        if query_path(self.resource, path) == "":
+            return
+        # else add an edge to the PriorityClass resource
         self.add_edge_to(
             path,
             ".",
@@ -880,6 +944,104 @@ class EdgesContext(list):
             "scheduling.k8s.io/v1",
             "REFERENCE"
         )
+
+    def add_rules_resource_names(self):
+        """
+            Add edges to rules resourceNames.
+        """
+        for ridx, rule in enumerate(query_path(self.resource, "rules", [])):
+            resource_names = query_path(rule, "resourceNames")
+            if resource_names is None:
+                continue # skip this rule as no resourceNames
+            api_groups = query_path(rule, "apiGroups")
+            if len(api_groups) != 1:
+                self.error(
+                    f"rules[{ridx}]",
+                    f"Field apiGroups ({api_groups}) should contain only one value"
+                )
+                continue # skip it
+            api_group = api_groups[0]
+            if api_group == "":
+                api_version = "v1"
+            else:
+                api_version = f"{api_group}/v1"
+            for resource in query_path(rule, "resources", []):
+                if '/' in resource:
+                    continue # skip subresources
+                kind = PLURAL2KINDS.get(resource, resource)
+                for rnidx, resource_name in enumerate(resource_names):
+                    if '*' in resource_name:
+                        continue # skip it
+                    scope = config["nodes"].get(f"{kind}/{api_version}", {}).get("scope")
+                    namespace = self.namespace if scope == "Namespaced" else None
+                    self.add_edge_to(
+                        f"rules[{ridx}].resourceNames[{rnidx}]",
+                        resource_name,
+                        namespace,
+                        kind,
+                        api_version,
+                        "REFERENCE-UP"
+                    )
+
+PLURAL2KINDS = {}
+for k, v in config["nodes"].items():
+    if not isinstance(v, dict):
+        continue # skip this aliased node
+    node_kind = k.split("/")[0]
+    plural = v.get("plural")
+    if plural is None:
+        plural = node_kind.lower() + "s"
+    PLURAL2KINDS[plural] = node_kind
+
+def create_node_for_role_rules_resource_names(role, nodes):
+    """
+        Create nodes for rules resourceNames.
+    """
+    for ridx, rule in enumerate(query_path(role, "rules", [])):
+        resource_names = query_path(rule, "resourceNames")
+        if resource_names is None:
+            continue # skip this rule as no resourceNames
+        api_groups = query_path(rule, "apiGroups")
+        if len(api_groups) != 1:
+            error(
+                role,
+                f"rules[{ridx}]",
+                f"Field apiGroups ({api_groups}) should contain only one value"
+            )
+            continue # skip it
+        api_group = api_groups[0]
+        if api_group == "":
+            api_version = "v1"
+        else:
+            api_version = f"{api_group}/v1"
+        for resource in query_path(rule, "resources", []):
+            if '/' in resource:
+                continue # skip subresources
+            resource_kind = PLURAL2KINDS.get(resource)
+            if resource_kind is None:
+                continue # skip it
+            for rnidx, resource_name in enumerate(resource_names):
+                if '*' in resource_name:
+                    continue # skip it
+                resource_id = f"{resource_name}/{get_namespace(role)}/{resource_kind}/{api_version}"
+                if resource_id in resources:
+                    continue # skip it
+                for rule1 in query_path(role, "rules", []):
+                    if api_group in rule1.get("apiGroups", []) \
+                        and resource in rule1.get("resources", []) \
+                        and "create" in rule1.get("verbs", []):
+                        new_node = {
+                            "kind": resource_kind,
+                            "apiVersion": api_version,
+                            "metadata": {
+                                "name": resource_name,
+                                "namespace": get_namespace(role),
+                                "labels": query_path(role, "metadata.labels")
+                            }
+                        }
+                        warning(role, f"rules[{ridx}].resourceNames[{rnidx}]", f"Create {new_node}")
+                        nodes.append(new_node)
+                        break
 
 # Parse arguments
 parser = argparse.ArgumentParser(
@@ -1101,21 +1263,6 @@ def process_resource(resource):
                 copy.deepcopy(config.get("clusters", []))
             )
     cluster.resources[rid] = resource
-    nodes_script = get_node_config(resource).get("nodes")
-    if nodes_script is not None:
-        nodes = []
-        try:
-            # pylint: disable-next=exec-used
-            exec(nodes_script)
-        except Exception as exc:
-            print("Error:", type(exc), ":", exc.args)
-            traceback.print_exc()
-            print("Nodes script:\n", nodes_script)
-            print("Resource:")
-            pprint(resource)
-            raise
-        for node in nodes:
-            process_resource(Resource(node, resource.filename))
 
 for filename in args.filename:
     try:
@@ -1124,7 +1271,7 @@ for filename in args.filename:
             for yaml_data in yaml.safe_load_all(f): # load YAML file
                 if yaml_data is None:
                     continue # Skip empty YAML content
-                if yaml_data.get("kind") == "List":
+                if yaml_data.get("kind", "NO-KIND").endswith("List") and "items" in yaml_data:
                     for r in yaml_data["items"]:
                         process_resource(Resource(r, filename))
                 else:
@@ -1143,6 +1290,36 @@ for filename in args.filename:
 if args.verbose:
     print("Loaded Kubernetes resources:")
     resource_cluster.display()
+
+# Create new nodes
+def create_new_nodes():
+    """
+        Create new nodes
+    """
+    def internal_create_new_nodes(resource):
+        nodes_script = get_node_config(resource).get("nodes")
+        if nodes_script is None:
+            return # skip it
+        nodes = []
+        try:
+            # pylint: disable-next=exec-used
+            exec(nodes_script)
+        except Exception as exc:
+            print("Error:", type(exc), ":", exc.args)
+            traceback.print_exc()
+            print("Nodes script:\n", nodes_script)
+            print("Resource:")
+            pprint(resource)
+            raise
+        for node in nodes:
+            resource = Resource(node, resource.filename)
+            process_resource(resource)
+            internal_create_new_nodes(resource)
+
+    for _, resource in dict(resources).items():
+        internal_create_new_nodes(resource)
+
+create_new_nodes()
 
 new_resource_cluster = ResourceCluster("ROOT") # Clustering resources
 
