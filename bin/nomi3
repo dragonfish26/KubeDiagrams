@@ -1593,7 +1593,7 @@ def resource_can_be_moved(resource, intersection_dict):
     if resource_items.issubset(intersection_items):
         extra_items = intersection_items - resource_items
         extra_indices = [label_to_index[k] for k, v in extra_items if k in label_to_index]
-        if all(idx > min(resource_label_indices) for idx in extra_indices):
+        if all(idx > max(resource_label_indices) for idx in extra_indices):
             print("This is CASE 1")
             return True  # Intersection only adds weaker labels, safe to move
     
