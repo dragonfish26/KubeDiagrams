@@ -81,66 +81,90 @@ class ResourceCluster:
 
 Note -- Selectors: change labels 
 
-Start with algo 3
+Cluster: K8s Application: cassandra 
+for resource cassandra : 
+resource labels {'app.kubernetes.io/name': 'cassandra'}
 
- - Namespace: default
-   - Resource oai-amf/default/ServiceAccount/v1
-   - Resource oai-ausf/default/ServiceAccount/v1
-   - Resource oai-gnb-sa/default/ServiceAccount/v1
-   - Resource oai-nr-ue-sa/default/ServiceAccount/v1
-   - Resource oai-nrf/default/ServiceAccount/v1
-   - Resource oai-smf/default/ServiceAccount/v1
-   - Resource oai-traffic-server/default/ServiceAccount/v1
-   - Resource oai-udm/default/ServiceAccount/v1
-   - Resource oai-udr/default/ServiceAccount/v1
-   - Resource oai-upf/default/ServiceAccount/v1
-   - Resource oai-cn5g-mysql-initialization/default/ConfigMap/v1
-   - Resource oai-gnb-configmap/default/ConfigMap/v1
-   - Resource oai-nr-ue-configmap/default/ConfigMap/v1
-   - Resource iperf-pod/default/ConfigMap/v1
-   - Resource core/default/ConfigMap/v1
-   - Resource oai-traffic-server/default/Deployment/apps/v1
-   - Release: oai-cn5g
-     - Chart: mysql-9.0.1
-       - K8s Application: oai-cn5g-mysql
-         - Resource oai-cn5g-mysql/default/Secret/v1
-         - Resource mysql/default/Service/v1
-   - K8s Instance: oai-cn5g
-     - Helm Chart: oai-amf-v2.1.0
-       - K8s Application: oai-amf
-         - Resource oai-amf/default/Service/v1
-         - Resource oai-amf/default/Deployment/apps/v1
-     - Helm Chart: oai-ausf-v2.1.0
-       - K8s Application: oai-ausf
-         - Resource oai-ausf/default/Service/v1
-         - Resource oai-ausf/default/Deployment/apps/v1
-     - Helm Chart: oai-gnb-2.1.0
-       - K8s Application: oai-gnb
-         - Resource oai-ran/default/Service/v1
-         - Resource oai-gnb/default/Deployment/apps/v1
-     - Helm Chart: oai-nrf-v2.1.0
-       - K8s Application: oai-nrf
-         - Resource oai-nrf/default/Service/v1
-         - Resource oai-nrf/default/Deployment/apps/v1
-     - Helm Chart: oai-smf-v2.1.0
-       - K8s Application: oai-smf
-         - Resource oai-smf/default/Service/v1
-         - Resource oai-smf/default/Deployment/apps/v1
-     - Helm Chart: oai-udm-v2.1.0
-       - K8s Application: oai-udm
-         - Resource oai-udm/default/Service/v1
-         - Resource oai-udm/default/Deployment/apps/v1
-     - Helm Chart: oai-udr-v2.1.0
-       - K8s Application: oai-udr
-         - Resource oai-udr/default/Service/v1
-         - Resource oai-udr/default/Deployment/apps/v1
-     - Helm Chart: oai-upf-v2.1.0
-       - K8s Application: oai-upf
-         - Resource oai-upf/default/Service/v1
-         - Resource oai-upf/default/Deployment/apps/v1
-     - Chart: mysql-9.0.1
-       - K8s Application: oai-cn5g-mysql
-         - Resource oai-cn5g-mysql/default/Deployment/apps/v1
-     - Helm Chart: oai-nr-ue-2.1.0
-       - K8s Application: oai-nr-ue
-         - Resource oai-nr-ue/default/Deployment/apps/v1
+
+Yes, by updating the labels dictionary in the update_resource_labels function, you are updating the resource item.
+
+This works because labels = query_path(resource, "metadata.labels") returns a reference to the dictionary inside the resource object.
+When you modify labels (e.g., with labels[new_label] = value or del labels[label]), you are directly changing the contents of resource["metadata"]["labels"].
+
+Summary:
+
+Changes to labels are reflected in resource["metadata"]["labels"].
+You are updating the resource item in-place.
+
+
+Altered functions:
+
+process_edges -> collect_edges, draw_edges, build_parent_nodes
+
+
+clusters:
+  - label: app.kubernetes.io/instance
+    title: K8s Instance
+    recommended: true
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#E5F5FD"
+  - label: release
+    title: Release
+    recommended: false
+    recommended_label: app.kubernetes.io/instance
+    graph_attr:
+      bgcolor: "#E5F5FD"
+  - label: helm.sh/chart
+    title: Helm Chart
+    recommended: true
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#EBF3E7"
+  - label: chart
+    title: Chart
+    recommended: false
+    recommended_label: helm.sh/chart
+    graph_attr:
+      bgcolor: "#EBF3E7"
+  - label: app.kubernetes.io/name
+    title: K8s Application
+    recommended: true
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#ECE8F6"
+  - label: app
+    title: Application
+    recommended: false
+    recommended_label: app.kubernetes.io/name
+    graph_attr:
+      bgcolor: "#ECE8F6"
+  - label: app.kubernetes.io/component
+    title: K8s Component
+    recommended: true
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#FDF7E3"
+  - label: service
+    title: Microservice
+    recommended: false
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#FDF7E3"
+  - label: tier
+    title: Tier
+    recommended: false
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#FDF7E3"
+  - annotation: helm.sh/hook
+    title: "{}"
+    recommended: true
+    recommended_label: None
+    graph_attr:
+      bgcolor: "#EBF3E7"
+      style: dotted,rounded
+
+for file in charts/*.yaml; do
+  bin/nomi3 --without-namespace "$file"
+done

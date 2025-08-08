@@ -544,8 +544,8 @@ class EdgesContext(list):
         containers = query_path(self.resource, path)
         if containers is None:
             return
-        target_resources = set()
 
+        target_resources = set()
         def process_optional_resource(
             path,
             context,
@@ -567,11 +567,8 @@ class EdgesContext(list):
                     resource_id
                 )
 
-
         for cidx, container in enumerate(containers):
             container_env = query_path(container, "env")
-
-
             if isinstance(container_env, list):
                 for eidx, env in enumerate(container_env):
                     process_optional_resource(
@@ -581,9 +578,7 @@ class EdgesContext(list):
                         "valueFrom.configMapKeyRef.name",
                         "valueFrom.configMapKeyRef.optional"
                     )
-
-
-                process_optional_resource(
+                    process_optional_resource(
                         f"{path}[{cidx}].env[{eidx}]",
                         env,
                         "Secret",
@@ -607,6 +602,7 @@ class EdgesContext(list):
                         "secretRef.name",
                         "secretRef.optional"
                     )
+
         for target_resource in target_resources:
             self.add_edge_to_rid(path, target_resource, "REFERENCE")
 
@@ -950,6 +946,8 @@ class EdgesContext(list):
             Add edges to rules resourceNames.
         """
         for ridx, rule in enumerate(query_path(self.resource, "rules", [])):
+            if not isinstance(rule, dict):
+                continue # skip this rule as it is not a dict as expected
             resource_names = query_path(rule, "resourceNames")
             if resource_names is None:
                 continue # skip this rule as no resourceNames
@@ -970,6 +968,8 @@ class EdgesContext(list):
                     continue # skip subresources
                 kind = PLURAL2KINDS.get(resource, resource)
                 for rnidx, resource_name in enumerate(resource_names):
+                    if not isinstance(resource_name, str):
+                        continue # skip it as a string is expected
                     if '*' in resource_name:
                         continue # skip it
                     scope = config["nodes"].get(f"{kind}/{api_version}", {}).get("scope")
@@ -998,6 +998,8 @@ def create_node_for_role_rules_resource_names(role, nodes):
         Create nodes for rules resourceNames.
     """
     for ridx, rule in enumerate(query_path(role, "rules", [])):
+        if not isinstance(rule, dict):
+            continue # skip this rule as it is not a dict as expected
         resource_names = query_path(rule, "resourceNames")
         if resource_names is None:
             continue # skip this rule as no resourceNames
@@ -1021,6 +1023,8 @@ def create_node_for_role_rules_resource_names(role, nodes):
             if resource_kind is None:
                 continue # skip it
             for rnidx, resource_name in enumerate(resource_names):
+                if not isinstance(resource_name, str):
+                    continue # skip it as a string is expected
                 if '*' in resource_name:
                     continue # skip it
                 resource_id = f"{resource_name}/{get_namespace(role)}/{resource_kind}/{api_version}"
@@ -1264,6 +1268,22 @@ def process_resource(resource):
             )
     cluster.resources[rid] = resource
 
+    nodes_script = get_node_config(resource).get("nodes")
+    if nodes_script is not None:
+        nodes = []
+        try:
+            # pylint: disable-next=exec-used
+            exec(nodes_script)
+        except Exception as exc:
+            print("Error:", type(exc), ":", exc.args)
+            traceback.print_exc()
+            print("Nodes script:\n", nodes_script)
+            print("Resource:")
+            pprint(resource)
+            raise
+        for node in nodes:
+            process_resource(Resource(node, resource.filename))
+
 for filename in args.filename:
     try:
         with open(0 if filename == '-' else filename, encoding="utf-8") as f:
@@ -1291,6 +1311,7 @@ if args.verbose:
     print("Loaded Kubernetes resources:")
     resource_cluster.display()
 
+''' 
 # Create new nodes
 def create_new_nodes():
     """
@@ -1320,6 +1341,7 @@ def create_new_nodes():
         internal_create_new_nodes(resource)
 
 create_new_nodes()
+'''
 
 new_resource_cluster = ResourceCluster("ROOT") # Clustering resources
 
@@ -1875,6 +1897,9 @@ def create_name_for_component(component):
     for resource_id in component:
         resources[resource_id]["metadata"]["labels"] = new_cluster_label
 
+    if name[-1] == '-':
+        name = name[:-1]
+
     return name
 
        
@@ -1902,6 +1927,11 @@ def create_clusters_for_connected_components(cluster):
             name = cn
         else:
             name = common_prefix(name, cn)
+
+    if len(name) > 1 and name[-1] == '-':
+        name = name[:-1]
+    elif len(name) <= 0:
+        name = "example-name"
 
     new_cluster_label = {'app.kubernetes.io/name': name}
     #'app.kubernetes.io/name': 'fission-all'
