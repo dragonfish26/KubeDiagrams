@@ -1143,6 +1143,13 @@ def update_resource_labels(resource, recommended_labels):
     """
         Update resource labels.
     """
+
+    LABEL_HIERARCHY = [
+        "app.kubernetes.io/instance",  # K8s Instance -- strongest 
+        "helm.sh/chart",               # Helm Chart
+        "app.kubernetes.io/name",      # K8s Name
+        "app.kubernetes.io/component",  # K8s Component -- weakest
+    ]
     
     labels = query_path(resource, "metadata.labels")
     cluster_labels = list(recommended_labels.keys())
@@ -1152,14 +1159,37 @@ def update_resource_labels(resource, recommended_labels):
     if labels is None:
         return
     for label, value in list(labels.items()):
+
         if label in cluster_labels:
             rec_label = recommended_labels.get(label)
             if rec_label != 'None':
                 
                 
                 if rec_label in labels :
+                    # if the recommended label already exists:
+                    # 1. check if a lower recommended label exists; if not this label now becomes the lower rec label
+                    # 1.2 if the lower rec label value == label value then delete this label
+                    # 2. if the recommeded label value != label value then skip this label
+
+                    idx = LABEL_HIERARCHY.index(rec_label)
+                    if idx + 1 < len(LABEL_HIERARCHY):
+                        print("checking case 1")
+                        lower_rec_label = LABEL_HIERARCHY[idx + 1]
+                        if lower_rec_label not in labels:
+                            print("lower rec label should be assigned")
+                            new_label = lower_rec_label
+                            labels[new_label] = value
+                            del labels[label]
+                            continue  
+                        elif labels[lower_rec_label] == value:
+                            del labels[label]
+                            continue 
+
+
                     if labels[rec_label] != value:
+                        print("checking case 2")
                         continue # skip this label if the recommended label already exists with a different value 
+
 
                 new_label = rec_label
                 labels[new_label] = value
@@ -1310,38 +1340,6 @@ for filename in args.filename:
 if args.verbose:
     print("Loaded Kubernetes resources:")
     resource_cluster.display()
-
-''' 
-# Create new nodes
-def create_new_nodes():
-    """
-        Create new nodes
-    """
-    def internal_create_new_nodes(resource):
-        nodes_script = get_node_config(resource).get("nodes")
-        if nodes_script is None:
-            return # skip it
-        nodes = []
-        try:
-            # pylint: disable-next=exec-used
-            exec(nodes_script)
-        except Exception as exc:
-            print("Error:", type(exc), ":", exc.args)
-            traceback.print_exc()
-            print("Nodes script:\n", nodes_script)
-            print("Resource:")
-            pprint(resource)
-            raise
-        for node in nodes:
-            resource = Resource(node, resource.filename)
-            process_resource(resource)
-            internal_create_new_nodes(resource)
-
-    for _, resource in dict(resources).items():
-        internal_create_new_nodes(resource)
-
-create_new_nodes()
-'''
 
 new_resource_cluster = ResourceCluster("ROOT") # Clustering resources
 
@@ -1711,6 +1709,40 @@ def label_intersection(cluster, dict_to_use):
         
 # END OF ALGO 2
 
+# ALGO 3 :
+
+no_relation_resources = []
+
+def find_no_relation_resources():
+    for resource_id, resource in resources.items():
+        if resource_id not in parent_nodes and resource_id not in child_nodes:
+            no_relation_resources.append(resource_id)
+            #print (f"Resource without relations: {resource_id}")
+
+def warning_cluster_for_resources_without_relations(cluster):
+
+    new_warning_cluster = cluster.get_or_create_cluster("Warning")
+    new_warning_cluster.graph_attr.update({
+        "label": "Warning",
+        "style": "filled",
+        "fillcolor": "#ff7f00"
+    })
+
+    for resource_id, resource in list(cluster.resources.items()):
+        if resource["kind"] == "CustomResourceDefinition" or resource["kind"] == "ClusterRole":
+            continue
+        if resource_id in no_relation_resources:
+            del cluster.resources[resource_id]
+            new_warning_cluster.resources[resource_id] = resource
+
+    for sub_cluster in list(cluster.clusters.values()):
+        if sub_cluster.name == "Warning":
+            continue 
+        warning_cluster_for_resources_without_relations(sub_cluster)
+
+# END OF ALGO 3
+            
+
 # ALGO 4 : Assign labels to remaining resources without labels
 
 def assign_labels_to_no_labels_resources(cluster):
@@ -1720,11 +1752,11 @@ def assign_labels_to_no_labels_resources(cluster):
             cluster, ["K8s Instance", "Helm Chart", "K8s Application", "K8s Component"])
         
         #print("Compatible cluster (no namespace):", compatible_cluster.name)
-        print(f"Assigning labels {compatible_cluster_labels} to resource {get_name(resource)}")
-        print(f"Before labels: {query_path(resource, 'metadata.labels', {})}")
+        #print(f"Assigning labels {compatible_cluster_labels} to resource {get_name(resource)}")
+        #print(f"Before labels: {query_path(resource, 'metadata.labels', {})}")
         r = resources[resource_id]
         resources[resource_id]["metadata"]["labels"] = compatible_cluster_labels
-        print(f"After labels: {query_path(resource, 'metadata.labels', {})}")
+        #print(f"After labels: {query_path(resource, 'metadata.labels', {})}")
 
     # Move resources that are directly in a Namespace cluster 
     for sub_cluster in cluster.clusters.values():
@@ -1756,16 +1788,16 @@ def find_unique_nested_cluster_labels(cluster, cluster_names, result=None):
         if not sc.name.startswith("Namespace")
     ]
 
-    print("Non-namespace clusters:", [sc.name for sc in non_namespace_clusters])
+    #print("Non-namespace clusters:", [sc.name for sc in non_namespace_clusters])
 
     matches = [sc for sc in non_namespace_clusters if sc.name.startswith(cluster_names[0])]
-    print("Cluster name :", cluster.name)   #Helm Chart: argo-workflows-0.45.20
+    #print("Cluster name :", cluster.name)   #Helm Chart: argo-workflows-0.45.20
     
     cluster_labels = {cluster.get("title") : cluster.get("label") for cluster in config.get("clusters", []) if "label" in cluster}
 
     # Only add if not ROOT or Namespace
     if cluster.name != "ROOT" and not cluster.name.startswith("Namespace:") :
-        print(cluster.name)
+        #print(cluster.name)
         parts = cluster.name.split(":")
         cluster_type = cluster_labels[parts[0].strip()]   # e.g. "Helm Chart" -> helm.sh/chart
         cluster_title = parts[1].strip() if len(parts) > 1 else ""   # e.g. "argo-workflows-0.45.20"
@@ -1841,6 +1873,8 @@ def find_connected_components(cluster):
     for node in get_no_label_resources(cluster):
         if not visited[node]:
             component = bfs_iterative(cluster, node, visited)
+            if len(component) <= 1:
+                continue
             result.append(component)
 
     return result
@@ -1915,6 +1949,10 @@ def create_clusters_for_connected_components(cluster):
     component_names = []
 
     components = find_connected_components(cluster)
+
+    if components is None or len(components) == 0:
+        return
+    
     for component in components:
         if len(component) > 1:  # Only create clusters for components with more than one resource
             n = create_name_for_component(component)
@@ -1935,6 +1973,7 @@ def create_clusters_for_connected_components(cluster):
 
     new_cluster_label = {'app.kubernetes.io/name': name}
     #'app.kubernetes.io/name': 'fission-all'
+
 
     for component in components:
         for resource_id in component:   
@@ -2013,15 +2052,23 @@ resource_cluster.display()
 collect_edges()
 build_parent_nodes() 
 
+find_no_relation_resources()
+
 resource_edges_copy = copy.deepcopy(resource_edges)  # Create a copy of the edges
 
+for rid, resource in resources.items():
+    if get_name(resource) == 'metallb-memberlist':
+        print(f"Labels for resource {rid}: {query_path(resource, 'metadata.labels', {})}")
+
 # Algo 2 : Update clusters based on label intersections
+'''
 label_intersection(resource_cluster, parent_nodes)
 label_intersection(resource_cluster, child_nodes)
 
 reprocess_resources()  # Reprocess resources after label intersection
 resource_cluster = new_resource_cluster # Use the new resource cluster after label intersection
 
+'''
 
 # Algo 4 : Assign labels to resources without labels
 assign_labels_to_no_labels_resources(resource_cluster)
@@ -2039,11 +2086,19 @@ new_resource_cluster = ResourceCluster("ROOT")
 reprocess_resources() 
 resource_cluster = new_resource_cluster 
 
+
+# Algo 3 : Create warning cluster for resources without relations
+warning_cluster_for_resources_without_relations(resource_cluster)
+
 print("---")
 print("Clusters after resource reprocessing:")
 
 new_resource_cluster.display()
 print("---")
+
+
+#for rid, resource in resources.items():
+    #print(f"Resource: {rid}, Annotation: {query_path(resource, 'metadata.annotations', {})}")
 
 # Generate diagram
 generate_diagram_in_cluster = query_path(config, "diagram.generate_diagram_in_cluster")
